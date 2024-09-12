@@ -1,8 +1,10 @@
 package com.example.sketch;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.util.AttributeSet;
@@ -17,8 +19,9 @@ public class DrawingView extends View {
     private Paint currentPaint;  // Holds the current paint color
     private Path currentPath;    // Holds the current path being drawn
     private List<DrawnPath> paths = new ArrayList<>();  // Keeps track of all paths and their colors
-    private String Title;
-
+    private String title;
+    private int originalWidth;
+    private int originalHeight;
 
     private class DrawnPath {
         Path path;
@@ -43,15 +46,81 @@ public class DrawingView extends View {
     }
 
     @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        if (originalWidth == 0 && originalHeight == 0) {
+            // Store the original canvas size the first time it's drawn
+            originalWidth = w;
+            originalHeight = h;
+        }
+    }
+
+    // Method to resize the canvas and redraw
+    public void resizeAndRedraw(double newWidth, double newHeight) {
+        float scaleX = (float) newWidth / originalWidth;
+        float scaleY = (float) newHeight / originalHeight;
+
+        // Scale all paths
+        for (DrawnPath drawnPath : paths) {
+            drawnPath.path.transform(getScaleMatrix(scaleX , scaleY));
+        }
+
+        // Redraw with new size
+        invalidate();
+    }
+
+    public Bitmap captureThumbnail(int width, int height) {
+        // Create a bitmap with the given width and height
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+
+        // Calculate scaling factors to fit the entire view in the thumbnail
+        float scaleX = (float) width / getWidth();
+        float scaleY = (float) height / getHeight();
+        float scale = Math.min(scaleX,scaleY); // Scale to fit the thumbnail size
+
+        // Scale the canvas
+        canvas.scale( scale, scale);
+        // Translate the canvas to center the view
+        canvas.translate( (width - getWidth() * scale) ,  (height - getHeight() * scale));
+
+        // Draw the view on the canvas
+        draw(canvas);
+
+        return bitmap;
+    }
+
+
+    private Matrix getScaleMatrix(float scaleX, float scaleY) {
+        Matrix matrix = new Matrix();
+        matrix.setScale(scaleX *2, scaleY *2);
+        return matrix;
+    }
+
+    @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        // Draw all saved paths with their colors
+        // Get the view width and height
+        int viewWidth = getWidth();
+        int viewHeight = getHeight();
+
+        // Calculate scaling factors based on the original content size
+        float scaleX = (float) viewWidth / originalWidth;
+        float scaleY = (float) viewHeight / originalHeight;
+
+        // Use the smaller scale factor to maintain aspect ratio
+        float scale = Math.min(scaleX, scaleY);
+
+        // Apply scaling to the canvas to adjust all paths
+        canvas.scale(scale, scale, viewWidth / 2, viewHeight / 2);
+
+        // Draw all saved paths
         for (DrawnPath dp : paths) {
             canvas.drawPath(dp.path, dp.paint);
         }
 
-        // Draw the current path being drawn
+        // Draw the current path
         canvas.drawPath(currentPath, currentPaint);
     }
 
@@ -79,12 +148,12 @@ public class DrawingView extends View {
         return true;
     }
 
-    public void setTitle(String title){
-        this.Title = title;
+    public void setTitle(String title) {
+        this.title = title;
     }
 
-    public String getTitle(){
-        return this.Title;
+    public String getTitle() {
+        return this.title;
     }
 
     // Method to change the current color
@@ -92,8 +161,8 @@ public class DrawingView extends View {
         currentPaint.setColor(color);  // Set the paint color to the selected one
     }
 
-    public void setPaintRadius(float brushsize){
-        currentPaint.setStrokeWidth(brushsize);
+    public void setPaintRadius(float brushSize) {
+        currentPaint.setStrokeWidth(brushSize);
     }
 
     public void clearCanvas() {
@@ -105,4 +174,3 @@ public class DrawingView extends View {
     }
 
 }
-

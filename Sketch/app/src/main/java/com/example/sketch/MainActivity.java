@@ -1,6 +1,8 @@
 package com.example.sketch;
 
+import android.content.Context;
 import android.graphics.Color;
+import android.icu.math.MathContext;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -9,6 +11,7 @@ import com.google.android.material.snackbar.Snackbar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.text.Layout;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
@@ -18,12 +21,15 @@ import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.sketch.databinding.ActivityMainBinding;
 
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.GridLayout;
@@ -42,14 +48,15 @@ public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
     private DrawingView canvas ;
     private ArrayList<DrawingView> allcanvas;
-    private View example;
+    private CanvasAdapter canvasAdapter;
+    private RecyclerView gridLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         allcanvas = new ArrayList<>();
+        canvasAdapter = new CanvasAdapter(allcanvas);
         setupmaincontent();
-
 
 
 
@@ -57,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        
+
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
@@ -79,30 +86,28 @@ public class MainActivity extends AppCompatActivity {
 public void setupmaincontent(){
 
     setContentView(R.layout.activity_main);
-    GridLayout mainlayout = findViewById(R.id.canvas_grid);
-    GridView grid = findViewById(R.id.gridview);
-    FloatingActionButton newcanvas = findViewById(R.id.newcanvas);
-    if (mainlayout != null && allcanvas != null && !allcanvas.isEmpty()) {
-        for (DrawingView canvas : allcanvas) {
-            if (canvas.getParent() != null) {
-                ((ViewGroup) canvas.getParent()).removeView(canvas);
-            }
+    gridLayout = findViewById(R.id.grid_layout);
 
-            GridLayout.LayoutParams params = new GridLayout.LayoutParams();
-            params.width = 200;
-            params.height = 200;
-            params.setMargins(10, 10, 10, 10); // Optional: Set margins between canvases
-
-            // Set the size of the canvas programmatically
-            canvas.setLayoutParams(params);
-          //  canvas.setBackgroundColor(Color.BLUE);
-            mainlayout.addView(canvas);
-        }
-    }
+    GridLayoutManager manager = new GridLayoutManager(this, 2); // 2 columns
+    gridLayout.setLayoutManager(manager);
+    gridLayout.setAdapter(canvasAdapter);
+    // Inside your activity or fragment
+    canvasAdapter.notifyDataSetChanged();
+    FloatingActionButton newcanvas = findViewById(R.id.newcanvas);// 2 colums to display the canvases
+    Button tester =  new Button(this);
 
 
 
-    //mainlayout.onViewAdded();
+
+                 //   int widthscale =(int) Math.round(canvas.getWidth() * 0.25);
+                  //  int heightscale = (int) Math.round(canvas.getHeight() * 0.25);
+
+                    // Set to zero or reduce the values
+
+
+                   // canvas.setLayoutParams(params);
+                  //  canvas.resizeAndRedraw(widthscale, heightscale);
+
 
     newcanvas.setOnClickListener(v -> {
         setContentView(R.layout.canvas);
@@ -174,7 +179,6 @@ public void setupmaincontent(){
             builder.show();
             allcanvas.add(canvas);
             popupWindow.dismiss();
-            this.example = canvas;
             setupmaincontent();
             });
         });
@@ -255,5 +259,22 @@ public void setupmaincontent(){
     });
 
 }
+
+    public int[] calculateAspectRatio(int originalWidth, int originalHeight, int maxWidth, int maxHeight) {
+        // Calculate the aspect ratio
+        float aspectRatio = (float) originalWidth / (float) originalHeight;
+
+        // Initialize the new width and height
+        int newWidth = maxWidth;
+        int newHeight = (int) (newWidth / aspectRatio);
+
+        // If the height is greater than the available max height, scale by height instead
+        if (newHeight > maxHeight) {
+            newHeight = maxHeight;
+            newWidth = (int) (newHeight * aspectRatio);
+        }
+
+        return new int[]{newWidth, newHeight};
+    }
 
 }
