@@ -64,6 +64,7 @@
             android:layout_width="match_parent"
             android:layout_height="300dp"
             android:layout_weight="1"
+            android:layout_columnWeight="1"
             android:background="#FFFFFF" />
 
         <!-- Control buttons, e.g., clear, save -->
