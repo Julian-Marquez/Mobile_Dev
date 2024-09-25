@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DrawingView extends View {
-
+    private Bitmap bitmapToRedraw;
     private Paint currentPaint;  // Holds the current paint color
     private Path currentPath;    // Holds the current path being drawn
     private List<DrawnPath> paths = new ArrayList<>();  // Keeps track of all paths and their colors
@@ -45,6 +45,11 @@ public class DrawingView extends View {
         currentPath = new Path();
     }
 
+    public void setBitmap(Bitmap bitmap) {
+        this.bitmapToRedraw = bitmap;
+        invalidate();  // Triggers a redraw with the new bitmap
+    }
+
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
@@ -56,9 +61,9 @@ public class DrawingView extends View {
     }
 
     // Method to resize the canvas and redraw
-    public void resizeAndRedraw(double newWidth, double newHeight) {
-        float scaleX = (float) newWidth / originalWidth;
-        float scaleY = (float) newHeight / originalHeight;
+    public void Redraw() {
+        float scaleX = (float)  originalWidth;
+        float scaleY = (float) originalHeight;
 
         // Scale all paths
         for (DrawnPath drawnPath : paths) {
@@ -68,6 +73,17 @@ public class DrawingView extends View {
         // Redraw with new size
         invalidate();
     }
+
+    public Bitmap getFullcanvas(){
+
+        Bitmap bitmap = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+
+        draw(canvas);
+        return  bitmap;
+    }
+
+
 
     public Bitmap captureThumbnail(int width, int height) {
         // Create a bitmap with the given width and height
@@ -100,7 +116,6 @@ public class DrawingView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-
         // Get the view width and height
         int viewWidth = getWidth();
         int viewHeight = getHeight();
@@ -111,6 +126,10 @@ public class DrawingView extends View {
 
         // Use the smaller scale factor to maintain aspect ratio
         float scale = Math.min(scaleX, scaleY);
+
+        if (bitmapToRedraw != null) {
+            canvas.drawBitmap(bitmapToRedraw, 0, 0, null);
+        }
 
         // Apply scaling to the canvas to adjust all paths
         canvas.scale(scale, scale, viewWidth / 2, viewHeight / 2);
@@ -166,11 +185,17 @@ public class DrawingView extends View {
     }
 
     public void clearCanvas() {
+        // Reset the bitmap to null or create a blank bitmap if needed
+        bitmapToRedraw = null;  // If you don't want any bitmap background
         // Clear all the saved paths
         paths.clear();
 
+        // Clear the current path
         currentPath.reset();
+
+        // Request to redraw the view
         invalidate();
     }
+
 
 }

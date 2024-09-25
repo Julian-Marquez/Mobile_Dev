@@ -1,6 +1,7 @@
 package com.example.sketch;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.icu.math.MathContext;
 import android.os.Bundle;
@@ -50,12 +51,13 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<DrawingView> allcanvas;
     private CanvasAdapter canvasAdapter;
     private RecyclerView gridLayout;
+    private boolean editing =false;
+    private DrawingView editCanvas;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         allcanvas = new ArrayList<>();
-        canvasAdapter = new CanvasAdapter(allcanvas);
         setupmaincontent();
 
 
@@ -83,8 +85,11 @@ public class MainActivity extends AppCompatActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
+
 public void setupmaincontent(){
 
+    canvasAdapter = new CanvasAdapter(allcanvas,this);
     setContentView(R.layout.activity_main);
     gridLayout = findViewById(R.id.grid_layout);
 
@@ -94,80 +99,99 @@ public void setupmaincontent(){
     // Inside your activity or fragment
     canvasAdapter.notifyDataSetChanged();
     FloatingActionButton newcanvas = findViewById(R.id.newcanvas);// 2 colums to display the canvases
-    Button tester =  new Button(this);
 
 
-
-
-                 //   int widthscale =(int) Math.round(canvas.getWidth() * 0.25);
-                  //  int heightscale = (int) Math.round(canvas.getHeight() * 0.25);
-
-                    // Set to zero or reduce the values
-
-
-                   // canvas.setLayoutParams(params);
-                  //  canvas.resizeAndRedraw(widthscale, heightscale);
 
 
     newcanvas.setOnClickListener(v -> {
-        setContentView(R.layout.canvas);
+        makenewCanvas();
 
-        SeekBar brushsize = findViewById(R.id.brush_size);
-
-
-        brushsize.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                // This method is called when the progress is changed.
-                // Use 'progress' as the current size of the brush.
-                // For example, set the brush size to this value:
-                //  brushsize = progress;
-                // Update your drawing tool with the new brush size
-                // Example: paint.setStrokeWidth(brushSize);
-                canvas.setPaintRadius(progress);
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {                }
-        });
+    });
 
 
-        canvas = findViewById(R.id.drawing_view); // This is a java class and an xml layout id
+}
+public void makenewCanvas( ){
+    setContentView(R.layout.canvas);
 
-        // Clear button functionality
-        Button clearButton = findViewById(R.id.clear_button);
-        Button colorButton = findViewById(R.id.color_button);
-        Button saveButton =  findViewById(R.id.save_button);
-        LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
-        View popupView = inflater.inflate(R.layout.color_select, null);
-        View savewindow = inflater.inflate(R.layout.save_option,null);
+    SeekBar brushsize = findViewById(R.id.brush_size);
 
-        // Create the PopupWindow
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
-        saveButton.setOnClickListener(s -> {
-            PopupWindow popupWindow = new PopupWindow(savewindow,
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT);
+if(getCanvas() == null) {// only for new instances
+    editing =false;
+    canvas = findViewById(R.id.drawing_view); // This is a java class and an xml layout id
+}
+else{
+    DrawingView editCanvas = findViewById(R.id.drawing_view);
 
-            popupWindow.setFocusable(true);
-            popupWindow.setOutsideTouchable(true); // Dismiss popup when touching outside
-            popupWindow.showAsDropDown(s, 0, 0, Gravity.BOTTOM);
+    // Capture the bitmap from the original canvas
+    Bitmap bitmap = Bitmap.createBitmap(canvas.getWidth(), canvas.getHeight(), Bitmap.Config.ARGB_8888);
+    android.graphics.Canvas redraw = new android.graphics.Canvas(bitmap);
 
-            EditText title = savewindow.findViewById(R.id.canvas_title);
-            Button confrim_save = savewindow.findViewById((R.id.confirm_save));
+    // Draw the original canvas content onto the new bitmap
+    canvas.draw(redraw);
 
-            confrim_save.setOnClickListener(cs ->{
+    Bitmap bit = canvas.getFullcanvas();
+
+    // Pass the bitmap to the new canvas for redrawing
+    editCanvas.setBitmap(bit);
+    editing =true;
+    editCanvas.invalidate();
+}
+
+    brushsize.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        @Override
+        public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+            // This method is called when the progress is changed.
+            // Use 'progress' as the current size of the brush.
+            // For example, set the brush size to this value:
+            //  brushsize = progress;
+            // Update your drawing tool with the new brush size
+            // Example: paint.setStrokeWidth(brushSize);
+            canvas.setPaintRadius(progress);
+        }
+
+        @Override
+        public void onStartTrackingTouch(SeekBar seekBar) {
+        }
+
+        @Override
+        public void onStopTrackingTouch(SeekBar seekBar) {                }
+    });
+
+
+
+
+    // Clear button functionality
+    Button clearButton = findViewById(R.id.clear_button);
+    Button colorButton = findViewById(R.id.color_button);
+    Button saveButton =  findViewById(R.id.save_button);
+    LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
+    View popupView = inflater.inflate(R.layout.color_select, null);
+    View savewindow = inflater.inflate(R.layout.save_option,null);
+
+    // Create the PopupWindow
+
+    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+    saveButton.setOnClickListener(s -> {
+        PopupWindow popupWindow = new PopupWindow(savewindow,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+
+        popupWindow.setFocusable(true);
+        popupWindow.setOutsideTouchable(true); // Dismiss popup when touching outside
+        popupWindow.showAsDropDown(s, 0, 0, Gravity.BOTTOM);
+
+        EditText title = savewindow.findViewById(R.id.canvas_title);
+        Button confrim_save = savewindow.findViewById((R.id.confirm_save)); // this is the button within save button
+
+        confrim_save.setOnClickListener(cs ->{
 
 
 
             if(title.getText().toString().isEmpty()){
-                canvas.setTitle("Untitled");
+                canvas.setTitle("Untitled"); // by default
             }
             else{
                 canvas.setTitle(title.getText().toString());
@@ -177,104 +201,99 @@ public void setupmaincontent(){
             builder.setCancelable(true);
             builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
             builder.show();
-            allcanvas.add(canvas);
+            if(!editing) {
+                allcanvas.add(canvas);
+            }
             popupWindow.dismiss();
             setupmaincontent();
-            });
         });
-
-
-        colorButton.setOnClickListener(c -> {
-            PopupWindow popupWindow = new PopupWindow(popupView,
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT);
-
-            popupWindow.setFocusable(true);
-            popupWindow.setOutsideTouchable(true); // Dismiss popup when touching outside
-
-            popupWindow.showAsDropDown(c, 0, 0, Gravity.BOTTOM);
-
-
-            //all color buttons
-            Button darkblue =  popupView.findViewById(R.id.color1);
-            Button blue =  popupView.findViewById(R.id.color2);
-            Button darkgreen =  popupView.findViewById(R.id.color3);
-            Button green =  popupView.findViewById(R.id.color4);
-            Button white =  popupView.findViewById(R.id.color5);
-            Button yellow =  popupView.findViewById(R.id.color6);
-            Button orange =  popupView.findViewById(R.id.color7);
-            Button orangelight =  popupView.findViewById(R.id.color8);
-            Button red =  popupView.findViewById(R.id.color9);
-            Button black =  popupView.findViewById(R.id.color10);
-            darkblue.setOnClickListener(db ->{
-                canvas.setPaint(Color.parseColor("#0099CC"));
-            });
-            blue.setOnClickListener(db ->{
-                canvas.setPaint(Color.parseColor("#00DDFF"));
-                popupWindow.dismiss();
-            });
-            darkgreen.setOnClickListener(db ->{
-                canvas.setPaint(Color.parseColor("#669900"));
-                popupWindow.dismiss();
-            });
-            green.setOnClickListener(db ->{
-                canvas.setPaint(Color.parseColor("#99CC00"));
-                popupWindow.dismiss();
-            });
-            white.setOnClickListener(db ->{
-                canvas.setPaint(Color.WHITE);
-                popupWindow.dismiss();
-            });
-            yellow.setOnClickListener(db ->{
-                canvas.setPaint(Color.parseColor("#FFFF00"));
-                popupWindow.dismiss();
-            });
-            orange.setOnClickListener(db ->{
-                canvas.setPaint(Color.parseColor("#FF8800"));
-                popupWindow.dismiss();
-
-            });
-            orangelight.setOnClickListener(db ->{
-                canvas.setPaint(Color.parseColor("#FFBB33"));
-                popupWindow.dismiss();
-            });
-            red.setOnClickListener(db ->{
-                canvas.setPaint(Color.parseColor("#CC0000"));
-            });
-            black.setOnClickListener(db ->{
-                canvas.setPaint(Color.BLACK);
-                popupWindow.dismiss();
-            });
-
-
-
-        });
-        clearButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                canvas.clearCanvas();  // Clear the canvas
-            }
-        });
-
     });
 
-}
 
-    public int[] calculateAspectRatio(int originalWidth, int originalHeight, int maxWidth, int maxHeight) {
-        // Calculate the aspect ratio
-        float aspectRatio = (float) originalWidth / (float) originalHeight;
+    colorButton.setOnClickListener(c -> {
+        PopupWindow popupWindow = new PopupWindow(popupView,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
 
-        // Initialize the new width and height
-        int newWidth = maxWidth;
-        int newHeight = (int) (newWidth / aspectRatio);
+        popupWindow.setFocusable(true);
+        popupWindow.setOutsideTouchable(true); // Dismiss popup when touching outside
 
-        // If the height is greater than the available max height, scale by height instead
-        if (newHeight > maxHeight) {
-            newHeight = maxHeight;
-            newWidth = (int) (newHeight * aspectRatio);
+        popupWindow.showAsDropDown(c, 0, 0, Gravity.BOTTOM);
+
+
+        //all color buttons
+        Button darkblue =  popupView.findViewById(R.id.color1);
+        Button blue =  popupView.findViewById(R.id.color2);
+        Button darkgreen =  popupView.findViewById(R.id.color3);
+        Button green =  popupView.findViewById(R.id.color4);
+        Button white =  popupView.findViewById(R.id.color5);
+        Button yellow =  popupView.findViewById(R.id.color6);
+        Button orange =  popupView.findViewById(R.id.color7);
+        Button orangelight =  popupView.findViewById(R.id.color8);
+        Button red =  popupView.findViewById(R.id.color9);
+        Button black =  popupView.findViewById(R.id.color10);
+        darkblue.setOnClickListener(db ->{
+            canvas.setPaint(Color.parseColor("#0099CC"));
+        });
+        blue.setOnClickListener(db ->{
+            canvas.setPaint(Color.parseColor("#00DDFF"));
+            popupWindow.dismiss();
+        });
+        darkgreen.setOnClickListener(db ->{
+            canvas.setPaint(Color.parseColor("#669900"));
+            popupWindow.dismiss();
+        });
+        green.setOnClickListener(db ->{
+            canvas.setPaint(Color.parseColor("#99CC00"));
+            popupWindow.dismiss();
+        });
+        white.setOnClickListener(db ->{
+            canvas.setPaint(Color.WHITE);
+            popupWindow.dismiss();
+        });
+        yellow.setOnClickListener(db ->{
+            canvas.setPaint(Color.parseColor("#FFFF00"));
+            popupWindow.dismiss();
+        });
+        orange.setOnClickListener(db ->{
+            canvas.setPaint(Color.parseColor("#FF8800"));
+            popupWindow.dismiss();
+
+        });
+        orangelight.setOnClickListener(db ->{
+            canvas.setPaint(Color.parseColor("#FFBB33"));
+            popupWindow.dismiss();
+        });
+        red.setOnClickListener(db ->{
+            canvas.setPaint(Color.parseColor("#CC0000"));
+        });
+        black.setOnClickListener(db ->{
+            canvas.setPaint(Color.BLACK);
+            popupWindow.dismiss();
+        });
+
+
+
+    });
+    clearButton.setOnClickListener(new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            canvas.clearCanvas();  // Clear the canvas
         }
+    });
 
-        return new int[]{newWidth, newHeight};
+
+}
+public ArrayList<DrawingView> getAllCanvas(){
+        return this.allcanvas;
+}
+    public void setcanvas(DrawingView canvas){
+        this.editCanvas = canvas;
     }
+    public DrawingView getCanvas(){
+        return this.canvas;
+    }
+
+
 
 }
