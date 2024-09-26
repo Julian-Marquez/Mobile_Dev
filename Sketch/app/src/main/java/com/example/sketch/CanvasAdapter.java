@@ -54,7 +54,7 @@ public class CanvasAdapter extends RecyclerView.Adapter<CanvasAdapter.CanvasView
         holder.image.setImageBitmap(thumbnail);
         holder.title.setText(canvas.getTitle());
 
-        holder.itemView.setOnClickListener(v -> {
+        holder.itemView.setOnClickListener(v -> { // this is when th user presses to edit the canvas
             mainpage.setContentView(R.layout.canvas);
 
             SeekBar brushsize = mainpage.findViewById(R.id.brush_size);
@@ -105,6 +105,7 @@ public class CanvasAdapter extends RecyclerView.Adapter<CanvasAdapter.CanvasView
             View popupView = inflater.inflate(R.layout.color_select, null);
             View savewindow = inflater.inflate(R.layout.save_option,null);
 
+
             // Create the PopupWindow
 
             AlertDialog.Builder builder = new AlertDialog.Builder(mainpage);
@@ -120,16 +121,28 @@ public class CanvasAdapter extends RecyclerView.Adapter<CanvasAdapter.CanvasView
 
                 EditText title = savewindow.findViewById(R.id.canvas_title);
                 Button confrim_save = savewindow.findViewById((R.id.confirm_save)); // this is the button within save button
+                Button cancelbutton = savewindow.findViewById(R.id.cancel); // if the user wants to cancel there changes
+
+                cancelbutton.setOnClickListener(cancel -> {
+
+                    mainpage.getAllCanvas().set(position,canvas); // pass the orignal canvas object
+                    notifyItemChanged(position);
+
+                    popupWindow.dismiss();
+                    mainpage.setupmaincontent();
+
+
+                });
 
                 confrim_save.setOnClickListener(cs ->{
 
 
 
                     if(!title.getText().toString().isEmpty()){
-                        editCanvas.setTitle(title.getText().toString()); // by default
+                        editCanvas.setTitle(title.getText().toString()); //
                     }
                     builder.setTitle("Canvas Created");
-                    builder.setMessage("Canvas named " + canvas.getTitle() + " has been saved.");
+                    builder.setMessage("Canvas named " + editCanvas.getTitle() + " has been Updated.");
                     builder.setCancelable(true);
                     builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
                     builder.show();

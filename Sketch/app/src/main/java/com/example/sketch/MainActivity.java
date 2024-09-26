@@ -1,27 +1,21 @@
 package com.example.sketch;
 
-import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.icu.math.MathContext;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.text.Layout;
 import android.view.Gravity;
 import android.view.LayoutInflater;
-import android.view.MenuInflater;
 import android.view.View;
 
-import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.navigation.ui.AppBarConfiguration;
-import androidx.navigation.ui.NavigationUI;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -29,17 +23,11 @@ import com.example.sketch.databinding.ActivityMainBinding;
 
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.GridLayout;
-import android.widget.GridView;
 import android.widget.LinearLayout;
-import android.widget.PopupMenu;
 import android.widget.PopupWindow;
 import android.widget.SeekBar;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 
@@ -47,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
 
     private AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
-    private DrawingView canvas ;
+
     private ArrayList<DrawingView> allcanvas;
     private CanvasAdapter canvasAdapter;
     private RecyclerView gridLayout;
@@ -57,10 +45,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        enableImmersiveMode(); // method takes advantage of the full screen
         allcanvas = new ArrayList<>();
         setupmaincontent();
-
-
 
     }
 
@@ -91,7 +78,7 @@ public void setupmaincontent(){
 
     canvasAdapter = new CanvasAdapter(allcanvas,this);
     setContentView(R.layout.activity_main);
-    gridLayout = findViewById(R.id.grid_layout);
+    gridLayout = findViewById(R.id.grid_layout); //this is still a reycle view but named to gridlayout for the layout
 
     GridLayoutManager manager = new GridLayoutManager(this, 2); // 2 columns
     gridLayout.setLayoutManager(manager);
@@ -112,32 +99,10 @@ public void setupmaincontent(){
 }
 public void makenewCanvas( ){
     setContentView(R.layout.canvas);
+     DrawingView canvas = findViewById(R.id.drawing_view); // This is a java class and an xml layout id
 
     SeekBar brushsize = findViewById(R.id.brush_size);
 
-
-
-if(getCanvas() == null) {// only for new instances
-    editing =false;
-    canvas = findViewById(R.id.drawing_view); // This is a java class and an xml layout id
-}
-else{
-    DrawingView editCanvas = findViewById(R.id.drawing_view);
-
-    // Capture the bitmap from the original canvas
-    Bitmap bitmap = Bitmap.createBitmap(canvas.getWidth(), canvas.getHeight(), Bitmap.Config.ARGB_8888);
-    android.graphics.Canvas redraw = new android.graphics.Canvas(bitmap);
-
-    // Draw the original canvas content onto the new bitmap
-    canvas.draw(redraw);
-
-    Bitmap bit = canvas.getFullcanvas();
-
-    // Pass the bitmap to the new canvas for redrawing
-    editCanvas.setBitmap(bit);
-    editing =true;
-    editCanvas.invalidate();
-}
 
     brushsize.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
         @Override
@@ -185,7 +150,17 @@ else{
 
         EditText title = savewindow.findViewById(R.id.canvas_title);
         Button confrim_save = savewindow.findViewById((R.id.confirm_save)); // this is the button within save button
+        Button disregardbutton = savewindow.findViewById(R.id.cancel); // if the user wants to disregard the canvas
+        disregardbutton.setText("Disregard");
 
+        disregardbutton.setOnClickListener(cancel -> {
+
+
+            popupWindow.dismiss();
+            setupmaincontent();
+
+
+        });
         confrim_save.setOnClickListener(cs ->{
 
 
@@ -201,9 +176,9 @@ else{
             builder.setCancelable(true);
             builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
             builder.show();
-            if(!editing) {
-                allcanvas.add(canvas);
-            }
+
+            allcanvas.add(canvas); //add the new canvas
+
             popupWindow.dismiss();
             setupmaincontent();
         });
@@ -277,7 +252,7 @@ else{
     });
     clearButton.setOnClickListener(new View.OnClickListener() {
         @Override
-        public void onClick(View v) {
+        public void onClick(View v){
             canvas.clearCanvas();  // Clear the canvas
         }
     });
@@ -290,10 +265,23 @@ public ArrayList<DrawingView> getAllCanvas(){
     public void setcanvas(DrawingView canvas){
         this.editCanvas = canvas;
     }
-    public DrawingView getCanvas(){
-        return this.canvas;
+
+    private void enableImmersiveMode() {
+        View decorView = getWindow().getDecorView();
+        WindowInsetsControllerCompat insetsController = ViewCompat.getWindowInsetsController(decorView);
+
+        if (insetsController != null) {
+            insetsController.hide(WindowInsetsCompat.Type.systemBars());
+            insetsController.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+            decorView.setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                            | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                            | View.SYSTEM_UI_FLAG_FULLSCREEN
+            );
+        }
     }
-
-
 
 }

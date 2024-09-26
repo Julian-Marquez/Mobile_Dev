@@ -87,18 +87,19 @@ public class DrawingView extends View {
 
     public Bitmap captureThumbnail(int width, int height) {
         // Create a bitmap with the given width and height
-        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+
+        Bitmap bitmap = Bitmap.createBitmap((int)(width*1.75), (int)(height*2), Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
 
         // Calculate scaling factors to fit the entire view in the thumbnail
-        float scaleX = (float) width / getWidth();
-        float scaleY = (float) height / getHeight();
+        float scaleX = (float) width / getWidth() ;
+        float scaleY = (float) height / getHeight() ;
         float scale = Math.min(scaleX,scaleY); // Scale to fit the thumbnail size
 
         // Scale the canvas
-        canvas.scale( scale, scale);
+        canvas.scale((float)(scaleX*1.57),scaleY*2);
         // Translate the canvas to center the view
-        canvas.translate( (width - getWidth() * scale) ,  (height - getHeight() * scale));
+        canvas.translate( (width - getWidth() * scale) , (height - getHeight() * scale) );
 
         // Draw the view on the canvas
         draw(canvas);
@@ -186,7 +187,7 @@ public class DrawingView extends View {
 
     public void clearCanvas() {
         // Reset the bitmap to null or create a blank bitmap if needed
-        bitmapToRedraw = null;  // If you don't want any bitmap background
+        bitmapToRedraw = null;  // this clears all the before edits
         // Clear all the saved paths
         paths.clear();
 
