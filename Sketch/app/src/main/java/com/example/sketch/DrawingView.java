@@ -11,6 +11,8 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 
+import com.google.android.material.shape.ShapePath;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,10 +20,13 @@ public class DrawingView extends View {
     private Bitmap bitmapToRedraw;
     private Paint currentPaint;  // Holds the current paint color
     private Path currentPath;    // Holds the current path being drawn
-    private List<DrawnPath> paths = new ArrayList<>();  // Keeps track of all paths and their colors
+    private List<DrawnPath> paths = new ArrayList<>();
+    private List<DrawnShape> shapes = new ArrayList<>(); // Keeps track of all paths and their colors
     private String title;
     private int originalWidth;
     private int originalHeight;
+    private float currentShapeSize = 100; // Default size for new shapes
+    private String currentShapeType; // Default size for new shapes
 
     private class DrawnPath {
         Path path;
@@ -62,44 +67,43 @@ public class DrawingView extends View {
 
     // Method to resize the canvas and redraw
     public void Redraw() {
-        float scaleX = (float)  originalWidth;
+        float scaleX = (float) originalWidth;
         float scaleY = (float) originalHeight;
 
         // Scale all paths
         for (DrawnPath drawnPath : paths) {
-            drawnPath.path.transform(getScaleMatrix(scaleX , scaleY));
+            drawnPath.path.transform(getScaleMatrix(scaleX, scaleY));
         }
 
         // Redraw with new size
         invalidate();
     }
 
-    public Bitmap getFullcanvas(){
+    public Bitmap getFullcanvas() {
 
         Bitmap bitmap = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
 
         draw(canvas);
-        return  bitmap;
+        return bitmap;
     }
-
 
 
     public Bitmap captureThumbnail(int width, int height) {
         // Create a bitmap with the given width and height
 
-        Bitmap bitmap = Bitmap.createBitmap((int)(width*1.75), (int)(height*2), Bitmap.Config.ARGB_8888);
+        Bitmap bitmap = Bitmap.createBitmap((int) (width * 1.75), (int) (height * 2), Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
 
         // Calculate scaling factors to fit the entire view in the thumbnail
-        float scaleX = (float) width / getWidth() ;
-        float scaleY = (float) height / getHeight() ;
-        float scale = Math.min(scaleX,scaleY); // Scale to fit the thumbnail size
+        float scaleX = (float) width / getWidth();
+        float scaleY = (float) height / getHeight();
+        float scale = Math.min(scaleX, scaleY); // Scale to fit the thumbnail size
 
         // Scale the canvas
-        canvas.scale((float)(scaleX*1.57),scaleY*2);
+        canvas.scale((float) (scaleX * 1.57), scaleY * 2);
         // Translate the canvas to center the view
-        canvas.translate( (width - getWidth() * scale) , (height - getHeight() * scale) );
+        canvas.translate((width - getWidth() * scale), (height - getHeight() * scale));
 
         // Draw the view on the canvas
         draw(canvas);
@@ -110,7 +114,7 @@ public class DrawingView extends View {
 
     private Matrix getScaleMatrix(float scaleX, float scaleY) {
         Matrix matrix = new Matrix();
-        matrix.setScale(scaleX *2, scaleY *2);
+        matrix.setScale(scaleX * 2, scaleY * 2);
         return matrix;
     }
 
@@ -139,6 +143,10 @@ public class DrawingView extends View {
         for (DrawnPath dp : paths) {
             canvas.drawPath(dp.path, dp.paint);
         }
+        // Draw shapes
+        for (DrawnShape ds : shapes) {  // Assuming you have a List<DrawnShape> shapes
+            canvas.drawPath(ds.path, ds.paint);
+        }
 
         // Draw the current path
         canvas.drawPath(currentPath, currentPaint);
@@ -151,15 +159,29 @@ public class DrawingView extends View {
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                currentPath.moveTo(x, y);
+                // Check if the user is in "shape" mode (set currentShapeType to null for free drawing)
+                if (currentShapeType != null) {
+                    // Add the shape at the touch coordinates
+                    addShape(currentShapeType, x, y, currentShapeSize);
+                    invalidate();  // Request to redraw the view
+                    return true;  // Stop further event handling as a shape is added
+                } else {
+                    // If no shape mode, start drawing freehand
+                    currentPath.moveTo(x, y);
+                }
                 break;
             case MotionEvent.ACTION_MOVE:
-                currentPath.lineTo(x, y);
+                if (currentShapeType == null) {
+                    // Continue freehand drawing
+                    currentPath.lineTo(x, y);
+                }
                 break;
             case MotionEvent.ACTION_UP:
-                // When the user lifts their finger, save the current path and color
-                paths.add(new DrawnPath(currentPath, currentPaint));
-                currentPath = new Path();  // Create a new path for the next drawing
+                if (currentShapeType == null) {
+                    // When drawing freehand, save the path and start a new one
+                    paths.add(new DrawnPath(currentPath, currentPaint));
+                    currentPath = new Path();  // Start a new path
+                }
                 break;
         }
 
@@ -167,6 +189,7 @@ public class DrawingView extends View {
         invalidate();
         return true;
     }
+
 
     public void setTitle(String title) {
         this.title = title;
@@ -198,5 +221,69 @@ public class DrawingView extends View {
         invalidate();
     }
 
+    public void addShape(String shapeType, float x, float y, float size) {
+        shapes.add(new DrawnShape(shapeType, x, y, size, currentPaint));
+        invalidate();  // Redraw canvas with new shape
+    }
 
+    private class DrawnShape {
+        Path path;
+        Paint paint;
+        String shapeType;
+        float x, y;  // Position for the shape
+        float size;  // Size for the shape
+
+        DrawnShape(String shapeType, float x, float y, float size, Paint paint) {
+            this.shapeType = shapeType;
+            this.x = x;
+            this.y = y;
+            this.size = size;
+            this.paint = new Paint(paint);  // Copy the paint
+            this.path = createShapePath(shapeType, x, y, size);  // Initialize path
+        }
+
+        // Check if the touch point is within the shape
+        boolean contains(float touchX, float touchY) {
+            switch (shapeType) {
+                case "circle":
+                    float dx = touchX - x;
+                    float dy = touchY - y;
+                    return (dx * dx + dy * dy) <= (size * size);  // Circle collision detection
+                case "rectangle":
+                    return touchX >= x - size / 2 && touchX <= x + size / 2 &&
+                            touchY >= y - size / 2 && touchY <= y + size / 2;  // Rect collision detection
+                default:
+                    return false;
+            }
+        }
+
+        // Update shape's position
+        void move(float deltaX, float deltaY) {
+            this.x += deltaX;
+            this.y += deltaY;
+            this.path = createShapePath(shapeType, x, y, size);  // Rebuild the path
+        }
+
+        // Resize shape
+        void resize(float newSize) {
+            this.size = newSize;
+            this.path = createShapePath(shapeType, x, y, size);  // Rebuild the path
+        }
+
+        // Create the path for the shape
+        private Path createShapePath(String shapeType, float x, float y, float size) {
+            Path path = new Path();
+            switch (shapeType) {
+                case "circle":
+                    path.addCircle(x, y, size, Path.Direction.CW);
+                    break;
+                case "rectangle":
+                    path.addRect(x - size / 2, y - size / 2, x + size / 2, y + size / 2, Path.Direction.CW);
+                    break;
+            }
+            return path;
+        }
+
+    }
 }
+

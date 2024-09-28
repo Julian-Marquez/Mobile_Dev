@@ -123,6 +123,7 @@ public class CanvasAdapter extends RecyclerView.Adapter<CanvasAdapter.CanvasView
                 Button confrim_save = savewindow.findViewById((R.id.confirm_save)); // this is the button within save button
                 Button cancelbutton = savewindow.findViewById(R.id.cancel); // if the user wants to cancel there changes
 
+
                 cancelbutton.setOnClickListener(cancel -> {
 
                     mainpage.getAllCanvas().set(position,canvas); // pass the orignal canvas object

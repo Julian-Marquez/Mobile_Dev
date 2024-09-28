@@ -1,5 +1,6 @@
 package com.example.sketch;
 
+import android.annotation.SuppressLint;
 import android.graphics.Color;
 import android.os.Bundle;
 
@@ -25,6 +26,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.SeekBar;
@@ -39,8 +41,6 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<DrawingView> allcanvas;
     private CanvasAdapter canvasAdapter;
     private RecyclerView gridLayout;
-    private boolean editing =false;
-    private DrawingView editCanvas;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -97,7 +97,8 @@ public void setupmaincontent(){
 
 
 }
-public void makenewCanvas( ){
+    @SuppressLint("WrongViewCast")
+    public void makenewCanvas( ){
     setContentView(R.layout.canvas);
      DrawingView canvas = findViewById(R.id.drawing_view); // This is a java class and an xml layout id
 
@@ -127,13 +128,42 @@ public void makenewCanvas( ){
 
 
 
-    // Clear button functionality
+    // Canvas button functionality
+    ImageButton addshapebutton = findViewById(R.id.newshapebutton);
+    SeekBar shapesizer = findViewById(R.id.shapesizer);
     Button clearButton = findViewById(R.id.clear_button);
     Button colorButton = findViewById(R.id.color_button);
     Button saveButton =  findViewById(R.id.save_button);
+
+
     LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
     View popupView = inflater.inflate(R.layout.color_select, null);
     View savewindow = inflater.inflate(R.layout.save_option,null);
+    View shapeselect = inflater.inflate(R.layout.addshapemenu,null);
+
+    addshapebutton.setOnClickListener(shape -> {
+        PopupWindow popupWindow = new PopupWindow(shapeselect,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+
+        popupWindow.setFocusable(true);
+        popupWindow.setOutsideTouchable(true); // Dismiss popup when touching outside
+        popupWindow.showAsDropDown(shape, 0, 0, Gravity.BOTTOM);
+
+        ImageButton circlebutton = shapeselect.findViewById(R.id.circlebutton);
+        ImageButton recatanglebutton = shapeselect.findViewById(R.id.rectanglebutton);
+        ImageButton starbutton = shapeselect.findViewById(R.id.starbutton);
+        ImageButton trianglebutton = shapeselect.findViewById(R.id.trainglebutton);
+
+        recatanglebutton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Add a circle with random position and size
+                canvas.addShape("rectangle", 70, 70, 100);
+            }
+        });
+
+    });
 
     // Create the PopupWindow
 
@@ -262,9 +292,7 @@ public void makenewCanvas( ){
 public ArrayList<DrawingView> getAllCanvas(){
         return this.allcanvas;
 }
-    public void setcanvas(DrawingView canvas){
-        this.editCanvas = canvas;
-    }
+
 
     private void enableImmersiveMode() {
         View decorView = getWindow().getDecorView();
