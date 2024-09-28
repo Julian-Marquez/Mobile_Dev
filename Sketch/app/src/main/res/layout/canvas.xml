@@ -29,16 +29,13 @@
                  />
 
             <!-- Brush Size -->
-            <TextView
-                android:id="@+id/textView"
-                android:layout_width="wrap_content"
+            <ImageButton
+                android:id="@+id/newshapebutton"
+                android:layout_width="20dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:textColor="@color/white"
-                android:background="@color/black"
-                android:textStyle="bold"
-                android:textAlignment="center"
-                android:text="Brush Size:" />
+                android:contentDescription="Adds a new shape"
+                app:srcCompat="@android:drawable/ic_input_add" />
 
             <SeekBar
                 android:id="@+id/brush_size"
@@ -68,12 +65,30 @@
             android:background="#FFFFFF" />
 
         <!-- Control buttons, e.g., clear, save -->
-        <Button
-            android:id="@+id/clear_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@android:color/holo_green_light"
-            android:text="Clear Canvas"/>
+
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/clear_button"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:background="@android:color/holo_green_light"
+                android:text="Clear Canvas"/>
+
+            <SeekBar
+                android:id="@+id/shapesizer"
+                android:layout_width="122dp"
+                android:layout_height="match_parent"
+                android:thumb="@android:drawable/star_on"
+                 />
+
+
+        </LinearLayout>
     </LinearLayout>
 
 

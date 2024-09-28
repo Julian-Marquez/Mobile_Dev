@@ -7,13 +7,12 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <!-- RecyclerView taking up available space above the FloatingActionButton -->
 
-    <!-- FloatingActionButton positioned at the bottom-end -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/grid_layout"
         android:layout_width="0dp"
-        android:layout_height="600dp"
+        android:layout_height="725dp"
+        android:background="@mipmap/abstract_background"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintLeft_toLeftOf="parent"
@@ -29,5 +28,19 @@
         app:srcCompat="@android:drawable/ic_menu_edit"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="194dp"
+        android:layout_height="37dp"
+        android:text="My Drawings"
+        android:textStyle="italic"
+        android:textColor="@color/black"
+        android:textSize="30sp"
+        android:textAlignment="center"
+        app:layout_constraintBottom_toTopOf="@+id/grid_layout"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
