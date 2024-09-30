@@ -20,12 +20,16 @@ public class DrawingView extends View {
     private Bitmap bitmapToRedraw;
     private Paint currentPaint;  // Holds the current paint color
     private Path currentPath;    // Holds the current path being drawn
+    private List<Object> allpaths = new ArrayList<>(); //this helps us keep track of both objects
     private List<DrawnPath> paths = new ArrayList<>();
     private List<DrawnShape> shapes = new ArrayList<>(); // Keeps track of all paths and their colors
     private String title;
     private int originalWidth;
     private int originalHeight;
     private float currentShapeSize = 100; // Default size for new shapes
+    private DrawnShape currentShape;
+    private DrawnPath newpath;
+    private List<Object> removeditems = new ArrayList<>(); // keep track of removed items to re add
     private String currentShapeType; // Default size for new shapes
 
     private class DrawnPath {
@@ -65,20 +69,6 @@ public class DrawingView extends View {
         }
     }
 
-    // Method to resize the canvas and redraw
-    public void Redraw() {
-        float scaleX = (float) originalWidth;
-        float scaleY = (float) originalHeight;
-
-        // Scale all paths
-        for (DrawnPath drawnPath : paths) {
-            drawnPath.path.transform(getScaleMatrix(scaleX, scaleY));
-        }
-
-        // Redraw with new size
-        invalidate();
-    }
-
     public Bitmap getFullcanvas() {
 
         Bitmap bitmap = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
@@ -110,6 +100,63 @@ public class DrawingView extends View {
 
         return bitmap;
     }
+
+    public List<Object> getPaths(){
+        return this.allpaths;
+    }
+
+    public void reAddMostRecent() {
+        Object lastremoved = null;
+        try {
+             lastremoved = removeditems.get(removeditems.size() - 1);
+        }catch(IndexOutOfBoundsException e){
+
+        }
+        if (lastremoved == null || allpaths.contains(lastremoved)) {
+            return; // Exit if there is nothing to re-add or if it's already in the list
+        }
+
+        // Check the type of lastremoved and add it back to the corresponding list
+        if (lastremoved instanceof DrawingView.DrawnPath) {
+            // Re-add to the paths list
+            paths.add((DrawingView.DrawnPath) lastremoved);
+        } else if (lastremoved instanceof DrawnShape) {
+            // Re-add to the shapes list
+            shapes.add((DrawnShape) lastremoved);
+        }
+
+        // Add it back to allpaths to maintain order
+        removeditems.remove(lastremoved); // now that it is removed don't store it
+        allpaths.add(lastremoved); // restore the last removed
+
+        invalidate();
+    }
+
+
+    public void removeMostRecent() {
+        if (allpaths.isEmpty()) {
+            return; // Exit if there is nothing to remove
+        }
+
+        // Get the most recent object (either a path or shape)
+        Object type = allpaths.get(allpaths.size() - 1);
+
+        // Remove it from the paths or shapes list
+        if (type instanceof DrawingView.DrawnPath && !paths.isEmpty()) {
+            paths.remove(paths.size() - 1); // Remove the most recent path
+        } if (shapes.contains(type) && !shapes.isEmpty()) {
+            shapes.remove(shapes.size() - 1); // Remove the most recent shape
+        }
+
+        // Store the last removed item for re-adding later
+        removeditems.add(type);
+
+        // Remove from allpaths as well
+        allpaths.remove(allpaths.size() - 1);
+
+        invalidate();
+    }
+
 
 
     private Matrix getScaleMatrix(float scaleX, float scaleY) {
@@ -152,6 +199,9 @@ public class DrawingView extends View {
         canvas.drawPath(currentPath, currentPaint);
     }
 
+    private DrawnShape selectedShape = null;  // Keep track of the selected shape
+    private float lastTouchX, lastTouchY;     // Track the last touch coordinates
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         float x = event.getX();
@@ -159,7 +209,15 @@ public class DrawingView extends View {
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                // Check if the user is in "shape" mode (set currentShapeType to null for free drawing)
+                // Check if the touch point is inside an existing shape
+                selectedShape = getTouchedShape(x, y);
+                if (selectedShape != null) {
+                    lastTouchX = x;
+                    lastTouchY = y;
+                    return true;  // Stop further event handling as we are moving a shape
+                }
+
+                // If no shape is touched, check if we are in shape-drawing mode
                 if (currentShapeType != null) {
                     // Add the shape at the touch coordinates
                     addShape(currentShapeType, x, y, currentShapeSize);
@@ -170,16 +228,30 @@ public class DrawingView extends View {
                     currentPath.moveTo(x, y);
                 }
                 break;
+
             case MotionEvent.ACTION_MOVE:
-                if (currentShapeType == null) {
+                if (selectedShape != null) {
+                    // Move the selected shape based on touch movement
+                    float deltaX = x - lastTouchX;
+                    float deltaY = y - lastTouchY;
+                    selectedShape.move(deltaX, deltaY);
+                    lastTouchX = x;
+                    lastTouchY = y;
+                    invalidate();  // Request to redraw the view
+                } else if (currentShapeType == null) {
                     // Continue freehand drawing
                     currentPath.lineTo(x, y);
                 }
                 break;
+
             case MotionEvent.ACTION_UP:
-                if (currentShapeType == null) {
+                if (selectedShape != null) {
+
+                } else if (currentShapeType == null) {
                     // When drawing freehand, save the path and start a new one
-                    paths.add(new DrawnPath(currentPath, currentPaint));
+                    newpath = new DrawnPath(currentPath,currentPaint);
+                    allpaths.add(newpath);
+                    paths.add(newpath);
                     currentPath = new Path();  // Start a new path
                 }
                 break;
@@ -190,6 +262,30 @@ public class DrawingView extends View {
         return true;
     }
 
+    public boolean isSelectedShape(){
+        return selectedShape != null;
+    }
+
+    public float getCurrentShapeSize(){
+        return currentShapeSize;
+    }
+
+    public void setCurrentShapeSize(float newSize) {
+        if (selectedShape != null) {
+            selectedShape.resize(newSize);
+            invalidate();  // Redraw the view with the resized shape
+        }
+    }
+
+    // Helper method to find a shape that is touched
+    private DrawnShape getTouchedShape(float x, float y) {
+        for (DrawnShape shape : shapes) {
+            if (shape.contains(x, y)) {
+                return shape;
+            }
+        }
+        return null;  // No shape is touched
+    }
 
     public void setTitle(String title) {
         this.title = title;
@@ -209,11 +305,11 @@ public class DrawingView extends View {
     }
 
     public void clearCanvas() {
-        // Reset the bitmap to null or create a blank bitmap if needed
         bitmapToRedraw = null;  // this clears all the before edits
         // Clear all the saved paths
         paths.clear();
-
+        shapes.clear();
+        allpaths.clear();
         // Clear the current path
         currentPath.reset();
 
@@ -222,11 +318,13 @@ public class DrawingView extends View {
     }
 
     public void addShape(String shapeType, float x, float y, float size) {
-        shapes.add(new DrawnShape(shapeType, x, y, size, currentPaint));
+       currentShape = new DrawnShape(shapeType, x, y, size, currentPaint);
+        allpaths.add(currentShape);
+        shapes.add(currentShape);
         invalidate();  // Redraw canvas with new shape
     }
 
-    private class DrawnShape {
+    private class DrawnShape{
         Path path;
         Paint paint;
         String shapeType;
@@ -243,32 +341,58 @@ public class DrawingView extends View {
         }
 
         // Check if the touch point is within the shape
+        // Check if the touch point is within the shape
         boolean contains(float touchX, float touchY) {
             switch (shapeType) {
                 case "circle":
                     float dx = touchX - x;
                     float dy = touchY - y;
-                    return (dx * dx + dy * dy) <= (size * size);  // Circle collision detection
+                    return (dx * dx + dy * dy) <= (size * size);
                 case "rectangle":
                     return touchX >= x - size / 2 && touchX <= x + size / 2 &&
-                            touchY >= y - size / 2 && touchY <= y + size / 2;  // Rect collision detection
+                            touchY >= y - size / 2 && touchY <= y + size / 2;
+                case "triangle":
+                    // Coordinates of the three vertices of the triangle
+                    float x1 = x - size / 2;
+                    float y1 = y + size / 2;
+                    float x2 = x + size / 2;
+                    float y2 = y + size / 2;
+                    float x3 = x;
+                    float y3 = y - size / 2;
+
+                    float areaOrig = Math.abs((x2 - x1) * (y3 - y1) - (x3 - x1) * (y2 - y1));
+                    float area1 = Math.abs((x1 - touchX) * (y2 - touchY) - (x2 - touchX) * (y1 - touchY));
+                    float area2 = Math.abs((x2 - touchX) * (y3 - touchY) - (x3 - touchX) * (y2 - touchY));
+                    float area3 = Math.abs((x3 - touchX) * (y1 - touchY) - (x1 - touchX) * (y3 - touchY));
+
+                    // Check if the sum equals the original triangle area
+                    return (area1 + area2 + area3) == areaOrig;
+
+                case "star":
+                    float dxStar = touchX - x;
+                    float dyStar = touchY - y;
+                    return (dxStar * dxStar + dyStar * dyStar) <= (size * size);
+
+
                 default:
                     return false;
             }
         }
 
-        // Update shape's position
+
         void move(float deltaX, float deltaY) {
             this.x += deltaX;
             this.y += deltaY;
-            this.path = createShapePath(shapeType, x, y, size);  // Rebuild the path
+            this.path = createShapePath(shapeType, x, y, size);  // Rebuild the path at the new position
         }
 
-        // Resize shape
-        void resize(float newSize) {
+
+        public void resize(float newSize) {
             this.size = newSize;
-            this.path = createShapePath(shapeType, x, y, size);  // Rebuild the path
+            // Rebuild the path with the new size
+            this.path = createShapePath(shapeType, x, y, size);
         }
+
 
         // Create the path for the shape
         private Path createShapePath(String shapeType, float x, float y, float size) {
@@ -280,9 +404,54 @@ public class DrawingView extends View {
                 case "rectangle":
                     path.addRect(x - size / 2, y - size / 2, x + size / 2, y + size / 2, Path.Direction.CW);
                     break;
+                case "star":
+                    createStarPath(path, x, y, size);
+                    break;
+                case "triangle":
+                    createTrianglePath(path, x, y, size);
+                    break;
             }
             return path;
         }
+
+        private void createStarPath(Path path, float cx, float cy, float size) {
+            int numPoints = 5;
+            double angle = 2 * Math.PI / numPoints;
+            float innerRadius = size / 2.5f;
+
+            path.moveTo(
+                    (float) (cx + size * Math.cos(0)),
+                    (float) (cy + size * Math.sin(0))
+            );
+
+            for (int i = 0; i < numPoints; i++) {
+                // Outer point
+                path.lineTo(
+                        (float) (cx + size * Math.cos(i * angle)),
+                        (float) (cy + size * Math.sin(i * angle))
+                );
+                // Inner point
+                path.lineTo(
+                        (float) (cx + innerRadius * Math.cos(i * angle + angle / 2)),
+                        (float) (cy + innerRadius * Math.sin(i * angle + angle / 2))
+                );
+            }
+            path.close();
+        }
+
+        private void createTrianglePath(Path path, float cx, float cy, float size) {
+            float halfSize = size / 2;
+            float height = (float) (Math.sqrt(3) * halfSize);
+
+            // Move to top point of the triangle
+            path.moveTo(cx, cy - height / 2);
+
+            // Draw the triangle
+            path.lineTo(cx - halfSize, cy + height / 2);
+            path.lineTo(cx + halfSize, cy + height / 2);
+            path.close();
+        }
+
 
     }
 }

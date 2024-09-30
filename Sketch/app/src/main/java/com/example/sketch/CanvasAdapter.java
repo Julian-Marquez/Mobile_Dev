@@ -2,6 +2,7 @@ package com.example.sketch;
 
 import static android.content.Context.LAYOUT_INFLATER_SERVICE;
 
+import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -12,6 +13,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.GridLayout;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
@@ -43,7 +45,7 @@ public class CanvasAdapter extends RecyclerView.Adapter<CanvasAdapter.CanvasView
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.canvas_item, parent, false);
         return new CanvasViewHolder(view);
     }
-
+    @SuppressLint("MissingInflatedId")
     @Override
     public void onBindViewHolder(@NonNull CanvasViewHolder holder, int position) {
         DrawingView canvas = canvasList.get(position);
@@ -98,15 +100,114 @@ public class CanvasAdapter extends RecyclerView.Adapter<CanvasAdapter.CanvasView
 
 
             // Clear button functionality
+            ImageButton addshapebutton = mainpage.findViewById(R.id.newshapebutton);
+            ImageButton redoButton = mainpage.findViewById(R.id.redobutton);
+            ImageButton undoButton = mainpage.findViewById(R.id.undobutton);
+            SeekBar shapesizer = mainpage.findViewById(R.id.shapesizer);
             Button clearButton = mainpage.findViewById(R.id.clear_button);
             Button colorButton = mainpage.findViewById(R.id.color_button);
-            Button saveButton =  mainpage.findViewById(R.id.save_button);
+            ImageButton saveButton =  mainpage.findViewById(R.id.save_button);
             LayoutInflater inflater = (LayoutInflater) mainpage.getSystemService(LAYOUT_INFLATER_SERVICE);
             View popupView = inflater.inflate(R.layout.color_select, null);
             View savewindow = inflater.inflate(R.layout.save_option,null);
+            View shapeselect = inflater.inflate(R.layout.addshapemenu,null);
+
+            redoButton.setOnClickListener(redo -> {
+
+                if (editCanvas.getPaths() != null) {
+                    editCanvas.reAddMostRecent();  // Remove the most recent path
+
+                }
 
 
-            // Create the PopupWindow
+            });
+
+            undoButton.setOnClickListener(undo ->{
+
+                // Check if there are paths in the canvas and remove the most recent one
+                if (editCanvas.getPaths() != null && !canvas.getPaths().isEmpty()) {
+                    editCanvas.removeMostRecent();  // Remove the most recent path
+
+                }
+            });
+
+
+
+            addshapebutton.setOnClickListener(shape -> {
+                PopupWindow popupWindow = new PopupWindow(shapeselect,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT);
+
+                popupWindow.setFocusable(true);
+                popupWindow.setOutsideTouchable(true); // Dismiss popup when touching outside
+                popupWindow.showAsDropDown(shape, 0, 0, Gravity.BOTTOM);
+
+                ImageButton circlebutton = shapeselect.findViewById(R.id.circlebutton);
+               ImageButton recatanglebutton = shapeselect.findViewById(R.id.rectanglebutton);
+                ImageButton starbutton = shapeselect.findViewById(R.id.starbutton);
+                ImageButton trianglebutton = shapeselect.findViewById(R.id.trainglebutton);
+
+                circlebutton.setOnClickListener(new View.OnClickListener(){
+                    @Override
+                    public void onClick(View v) {
+                        // Add a circle with random position and size
+                        editCanvas.addShape("circle", 70, 70, 100);
+                    }
+
+                });
+                starbutton.setOnClickListener(new View.OnClickListener(){
+                    @Override
+                    public void onClick(View v) {
+                        // Add a circle with random position and size
+                        editCanvas.addShape("star", 70, 70, 100);
+                    }
+
+                });
+                trianglebutton.setOnClickListener(new View.OnClickListener(){
+                    @Override
+                    public void onClick(View v) {
+                        // Add a circle with random position and size
+                        editCanvas.addShape("triangle", 70, 70, 100);
+                    }
+
+                });
+
+
+                recatanglebutton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        // Add a circle with random position and size
+                        editCanvas.addShape("rectangle", 70, 70, 100);
+                    }
+                });
+
+            });
+
+            shapesizer.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                                                      @Override
+                                                      public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                                                          // This method is called when the progress is changed.
+                                                          // Use 'progress' as the current size of the brush.
+                                                          // For example, set the brush size to this value:
+                                                          //  brushsize = progress;
+                                                          // Update your drawing tool with the new brush size
+                                                          // Example: paint.setStrokeWidth(brushSize);
+                                                          editCanvas.setCurrentShapeSize(progress*6);
+                                                      }
+
+                                                      @Override
+                                                      public void onStartTrackingTouch(SeekBar seekBar) {
+                                                          if(editCanvas.isSelectedShape()){
+                                                              seekBar.setProgress((int)(editCanvas.getCurrentShapeSize())/5);
+                                                          }
+                                                      }
+
+                                                      @Override
+                                                      public void onStopTrackingTouch(SeekBar seekBar) {
+
+                                                      }
+                                                  }
+            );
 
             AlertDialog.Builder builder = new AlertDialog.Builder(mainpage);
 
@@ -181,6 +282,7 @@ public class CanvasAdapter extends RecyclerView.Adapter<CanvasAdapter.CanvasView
                 Button black =  popupView.findViewById(R.id.color10);
                 darkblue.setOnClickListener(db ->{
                     editCanvas.setPaint(Color.parseColor("#0099CC"));
+                    popupWindow.dismiss();
                 });
                 blue.setOnClickListener(db ->{
                     editCanvas.setPaint(Color.parseColor("#00DDFF"));
@@ -213,6 +315,7 @@ public class CanvasAdapter extends RecyclerView.Adapter<CanvasAdapter.CanvasView
                 });
                 red.setOnClickListener(db ->{
                     editCanvas.setPaint(Color.parseColor("#CC0000"));
+                    popupWindow.dismiss();
                 });
                 black.setOnClickListener(db ->{
                     editCanvas.setPaint(Color.BLACK);
@@ -245,6 +348,7 @@ public class CanvasAdapter extends RecyclerView.Adapter<CanvasAdapter.CanvasView
     public static class CanvasViewHolder extends RecyclerView.ViewHolder {
         TextView title;
         ImageView image; // Use ImageView to display the thumbnail
+
 
         public CanvasViewHolder(@NonNull View itemView) {
             super(itemView);

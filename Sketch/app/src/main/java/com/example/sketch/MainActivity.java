@@ -130,10 +130,12 @@ public void setupmaincontent(){
 
     // Canvas button functionality
     ImageButton addshapebutton = findViewById(R.id.newshapebutton);
+    ImageButton undoButton =  findViewById(R.id.undobutton);
+    ImageButton redoButton = findViewById(R.id.redobutton);
     SeekBar shapesizer = findViewById(R.id.shapesizer);
     Button clearButton = findViewById(R.id.clear_button);
     Button colorButton = findViewById(R.id.color_button);
-    Button saveButton =  findViewById(R.id.save_button);
+    ImageButton saveButton =  findViewById(R.id.save_button);
 
 
     LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
@@ -141,7 +143,28 @@ public void setupmaincontent(){
     View savewindow = inflater.inflate(R.layout.save_option,null);
     View shapeselect = inflater.inflate(R.layout.addshapemenu,null);
 
-    addshapebutton.setOnClickListener(shape -> {
+    redoButton.setOnClickListener(redo -> {
+
+        if (canvas.getPaths() != null) {
+            canvas.reAddMostRecent();  // Remove the most recent path
+
+        }
+
+
+    });
+
+        undoButton.setOnClickListener(undo ->{
+
+                // Check if there are paths in the canvas and remove the most recent one
+                if (canvas.getPaths() != null && !canvas.getPaths().isEmpty()) {
+                    canvas.removeMostRecent();  // Remove the most recent path
+
+            }
+        });
+
+
+
+        addshapebutton.setOnClickListener(shape -> {
         PopupWindow popupWindow = new PopupWindow(shapeselect,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -155,6 +178,32 @@ public void setupmaincontent(){
         ImageButton starbutton = shapeselect.findViewById(R.id.starbutton);
         ImageButton trianglebutton = shapeselect.findViewById(R.id.trainglebutton);
 
+        circlebutton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                // Add a circle with random position and size
+                canvas.addShape("circle", 70, 70, 100);
+            }
+
+        });
+        starbutton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                // Add a circle with random position and size
+                canvas.addShape("star", 70, 70, 100);
+            }
+
+        });
+        trianglebutton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                // Add a circle with random position and size
+                canvas.addShape("triangle", 70, 70, 100);
+            }
+
+        });
+
+
         recatanglebutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -164,6 +213,34 @@ public void setupmaincontent(){
         });
 
     });
+
+    shapesizer.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        @Override
+        public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+            // This method is called when the progress is changed.
+            // Use 'progress' as the current size of the brush.
+            // For example, set the brush size to this value:
+            //  brushsize = progress;
+            // Update your drawing tool with the new brush size
+            // Example: paint.setStrokeWidth(brushSize);
+            canvas.setCurrentShapeSize(progress*6);
+        }
+
+        @Override
+        public void onStartTrackingTouch(SeekBar seekBar) {
+            if(canvas.isSelectedShape()){
+                seekBar.setProgress((int)(canvas.getCurrentShapeSize())/5);
+            }
+        }
+
+        @Override
+        public void onStopTrackingTouch(SeekBar seekBar) {
+
+
+
+        }
+    }
+    );
 
     // Create the PopupWindow
 
@@ -239,6 +316,7 @@ public void setupmaincontent(){
         Button black =  popupView.findViewById(R.id.color10);
         darkblue.setOnClickListener(db ->{
             canvas.setPaint(Color.parseColor("#0099CC"));
+            popupWindow.dismiss();
         });
         blue.setOnClickListener(db ->{
             canvas.setPaint(Color.parseColor("#00DDFF"));
@@ -271,6 +349,7 @@ public void setupmaincontent(){
         });
         red.setOnClickListener(db ->{
             canvas.setPaint(Color.parseColor("#CC0000"));
+            popupWindow.dismiss();
         });
         black.setOnClickListener(db ->{
             canvas.setPaint(Color.BLACK);
@@ -292,7 +371,6 @@ public void setupmaincontent(){
 public ArrayList<DrawingView> getAllCanvas(){
         return this.allcanvas;
 }
-
 
     private void enableImmersiveMode() {
         View decorView = getWindow().getDecorView();
