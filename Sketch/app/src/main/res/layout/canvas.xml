@@ -30,10 +30,28 @@
 
             <!-- Brush Size -->
             <ImageButton
-                android:id="@+id/newshapebutton"
-                android:layout_width="20dp"
+                android:id="@+id/undobutton"
+                android:layout_width="58dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
+                android:background="@mipmap/gobackbackgound"
+                android:contentDescription="Adds a new shape"
+                app:srcCompat="@android:drawable/ic_menu_revert" />
+
+            <ImageButton
+                android:id="@+id/redobutton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@mipmap/redobackground"
+                app:srcCompat="@android:drawable/ic_menu_rotate" />
+
+            <ImageButton
+                android:id="@+id/newshapebutton"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@mipmap/add_background"
                 android:contentDescription="Adds a new shape"
                 app:srcCompat="@android:drawable/ic_input_add" />
 
@@ -42,15 +60,19 @@
                 android:layout_width="132dp"
                 android:layout_height="match_parent"
                 android:max="50"
+                android:thumbTint="@color/black"
+                android:thumb="@android:drawable/ic_menu_edit"
                 android:progress="10" />
 
-            <Button
+            <ImageButton
                 android:id="@+id/save_button"
                 android:layout_width="211px"
                 android:layout_height="156px"
                 android:layout_weight="1"
+                android:tint="@color/black"
+                android:background="@mipmap/save_background"
                 android:contentDescription=" "
-                android:background="@mipmap/save_button"
+                android:src="@android:drawable/ic_menu_save"
                  />
 
         </LinearLayout>
@@ -77,7 +99,7 @@
                 android:id="@+id/clear_button"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:background="@android:color/holo_green_light"
+                android:background="@mipmap/claer_backgorund"
                 android:text="Clear Canvas"/>
 
             <SeekBar
