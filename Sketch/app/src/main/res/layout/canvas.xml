@@ -109,6 +109,12 @@
                 android:thumb="@android:drawable/star_on"
                  />
 
+            <ImageButton
+                android:id="@+id/eraserButton"
+                android:layout_width="65dp"
+                android:layout_height="match_parent"
+                app:srcCompat="@mipmap/eraser" />
+
 
         </LinearLayout>
     </LinearLayout>
