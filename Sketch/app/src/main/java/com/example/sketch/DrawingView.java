@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PathMeasure;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DrawingView extends View {
+    private int canvasid;
     private Bitmap bitmapToRedraw;
     private Paint currentPaint;  // Holds the current paint color
     private Path currentPath;    // Holds the current path being drawn
@@ -29,6 +31,7 @@ public class DrawingView extends View {
     private float currentShapeSize = 100; // Default size for new shapes
     private DrawnShape currentShape;
     private DrawnPath newpath;
+    private boolean eraserMode = false;
     private List<Object> removeditems = new ArrayList<>(); // keep track of removed items to re add
     private String currentShapeType; // Default size for new shapes
 
@@ -199,6 +202,27 @@ public class DrawingView extends View {
         canvas.drawPath(currentPath, currentPaint);
     }
 
+    private void eraseIfTouched(float x, float y) {
+        // Check if the touch point is within any drawn shapes
+        DrawnShape shapeToErase = getTouchedShape(x, y);
+        if (shapeToErase != null) {
+            shapes.remove(shapeToErase);
+            allpaths.remove(shapeToErase);
+            invalidate();  // Redraw the canvas after removing the shape
+            return;
+        }
+
+    }
+
+    public void enableEraserMode(){
+        if(eraserMode) {
+            eraserMode = false;
+        }
+        else{
+            eraserMode = true;
+        }
+    }
+
     private DrawnShape selectedShape = null;  // Keep track of the selected shape
     private float lastTouchX, lastTouchY;     // Track the last touch coordinates
 
@@ -209,6 +233,11 @@ public class DrawingView extends View {
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
+                if (eraserMode) {
+                    // In eraser mode, check if a shape or path is touched, and remove it
+                    eraseIfTouched(x, y);
+                    return true;  // Stop further event handling as we are erasing
+                }
                 // Check if the touch point is inside an existing shape
                 selectedShape = getTouchedShape(x, y);
                 if (selectedShape != null) {
@@ -324,10 +353,18 @@ public class DrawingView extends View {
         invalidate();  // Redraw canvas with new shape
     }
 
+    public void setCanvasId(int id){
+        this.canvasid = id;
+    }
+    public int getCanvasid(){
+        return this.canvasid;
+    }
+
     private class DrawnShape{
         Path path;
         Paint paint;
         String shapeType;
+        private int shapeid;
         float x, y;  // Position for the shape
         float size;  // Size for the shape
 
@@ -452,6 +489,12 @@ public class DrawingView extends View {
             path.close();
         }
 
+        public void setShapeId(int id){
+            this.shapeid = id;
+        }
+        public int getShapeid(){
+            return this.shapeid;
+        }
 
     }
 }

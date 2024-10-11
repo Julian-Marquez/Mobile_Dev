@@ -1,11 +1,13 @@
 package com.example.sketch;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -16,11 +18,8 @@ import android.view.View;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
-import androidx.navigation.ui.AppBarConfiguration;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import com.example.sketch.databinding.ActivityMainBinding;
 
 import android.view.Menu;
 import android.view.MenuItem;
@@ -35,9 +34,6 @@ import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
-    private AppBarConfiguration appBarConfiguration;
-    private ActivityMainBinding binding;
-
     private ArrayList<DrawingView> allcanvas;
     private CanvasAdapter canvasAdapter;
     private RecyclerView gridLayout;
@@ -45,7 +41,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        enableImmersiveMode(); // method takes advantage of the full screen
+        EdgeToEdge.enable(this);
         allcanvas = new ArrayList<>();
         setupmaincontent();
 
@@ -78,6 +74,8 @@ public void setupmaincontent(){
 
     canvasAdapter = new CanvasAdapter(allcanvas,this);
     setContentView(R.layout.activity_main);
+    ImageButton profileButton = findViewById(R.id.profilepicButton);
+
     gridLayout = findViewById(R.id.grid_layout); //this is still a reycle view but named to gridlayout for the layout
 
     GridLayoutManager manager = new GridLayoutManager(this, 2); // 2 columns
@@ -87,8 +85,41 @@ public void setupmaincontent(){
     canvasAdapter.notifyDataSetChanged();
     FloatingActionButton newcanvas = findViewById(R.id.newcanvas);// 2 colums to display the canvases
 
+    LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
+    View profileView = inflater.inflate(R.layout.profile_options, null); // profile select menu
 
 
+    profileButton.setOnClickListener(profile ->{
+        PopupWindow popupWindow = new PopupWindow(profileView,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+
+        popupWindow.setFocusable(true);
+        popupWindow.setOutsideTouchable(true); // Dismiss popup when touching outside
+        popupWindow.showAsDropDown(profile, 0, 0, Gravity.BOTTOM);
+
+        Button newProfile = profileView.findViewById(R.id.newAccountButton);
+        Button editProfile = profileView.findViewById(R.id.editProfileButton);
+        Button signInButton = profileView.findViewById(R.id.signinButton);
+
+        newProfile.setOnClickListener(addProfile ->{
+            Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+            startActivity(intent);
+            //todo
+            popupWindow.dismiss();
+        });
+
+        editProfile.setOnClickListener(editprofile ->{
+            popupWindow.dismiss();
+            //todo
+        });
+
+        signInButton.setOnClickListener(login ->{
+
+            //todo
+        });
+
+    });
 
     newcanvas.setOnClickListener(v -> {
         makenewCanvas();
@@ -108,12 +139,7 @@ public void setupmaincontent(){
     brushsize.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
         @Override
         public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-            // This method is called when the progress is changed.
-            // Use 'progress' as the current size of the brush.
-            // For example, set the brush size to this value:
-            //  brushsize = progress;
-            // Update your drawing tool with the new brush size
-            // Example: paint.setStrokeWidth(brushSize);
+
             canvas.setPaintRadius(progress);
         }
 
@@ -130,6 +156,7 @@ public void setupmaincontent(){
 
     // Canvas button functionality
     ImageButton addshapebutton = findViewById(R.id.newshapebutton);
+    ImageButton eraserButton = findViewById(R.id.eraserButton);
     ImageButton undoButton =  findViewById(R.id.undobutton);
     ImageButton redoButton = findViewById(R.id.redobutton);
     SeekBar shapesizer = findViewById(R.id.shapesizer);
@@ -137,11 +164,16 @@ public void setupmaincontent(){
     Button colorButton = findViewById(R.id.color_button);
     ImageButton saveButton =  findViewById(R.id.save_button);
 
-
+    //windows for tools
     LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
     View popupView = inflater.inflate(R.layout.color_select, null);
     View savewindow = inflater.inflate(R.layout.save_option,null);
     View shapeselect = inflater.inflate(R.layout.addshapemenu,null);
+
+    eraserButton.setOnClickListener(erase ->{
+
+        canvas.enableEraserMode();
+    });
 
     redoButton.setOnClickListener(redo -> {
 
@@ -255,9 +287,11 @@ public void setupmaincontent(){
         popupWindow.setOutsideTouchable(true); // Dismiss popup when touching outside
         popupWindow.showAsDropDown(s, 0, 0, Gravity.BOTTOM);
 
+        //save menu attributes
         EditText title = savewindow.findViewById(R.id.canvas_title);
         Button confrim_save = savewindow.findViewById((R.id.confirm_save)); // this is the button within save button
         Button disregardbutton = savewindow.findViewById(R.id.cancel); // if the user wants to disregard the canvas
+
         disregardbutton.setText("Disregard");
 
         disregardbutton.setOnClickListener(cancel -> {

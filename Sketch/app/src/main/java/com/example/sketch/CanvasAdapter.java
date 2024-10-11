@@ -131,8 +131,6 @@ public class CanvasAdapter extends RecyclerView.Adapter<CanvasAdapter.CanvasView
                 }
             });
 
-
-
             addshapebutton.setOnClickListener(shape -> {
                 PopupWindow popupWindow = new PopupWindow(shapeselect,
                         LinearLayout.LayoutParams.WRAP_CONTENT,
