@@ -32,12 +32,6 @@ public class LoginActivity extends AppCompatActivity {
         SharedPreferences sharedPref = getSharedPreferences("MyAppPreferences", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
 
-       // String ismain = sharedPref.getString("main", null);
-
-
-
-
-
 
         allUsers = new ArrayList<>();
         operate.open(); // open the data base for usage
@@ -59,13 +53,12 @@ public class LoginActivity extends AppCompatActivity {
 
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
-            if(allUsers.isEmpty()){
-                Log.d("Login Activity","list is empty");
-            }
 
             for(User user : allUsers){
                 Log.d("Login Activity",user.getUserName());
-                if(username.equalsIgnoreCase(user.getUserName()) && userPassword.equalsIgnoreCase(user.getPassword())){
+                Log.d("Password",user.getPassword());
+                if(username.equalsIgnoreCase(user.getUserName()) && userPassword.equalsIgnoreCase(user.getPassword())
+                || username.equalsIgnoreCase(user.getEmail()) && userPassword.equalsIgnoreCase(user.getPassword()) ){ // this allows the user to either login with there email or username
 
                     // this will help the stay logged in as they tranverse through pages
                     editor.putString("username", user.getUserName());
@@ -77,7 +70,8 @@ public class LoginActivity extends AppCompatActivity {
 
                     userexist = true;
                 }
-                else if(username.equalsIgnoreCase(user.getUserName()) && !userPassword.equalsIgnoreCase(user.getPassword())){
+               else if(username.equalsIgnoreCase(user.getUserName()) && !userPassword.equalsIgnoreCase(user.getPassword())
+                        || username.equalsIgnoreCase(user.getEmail()) && !userPassword.equalsIgnoreCase(user.getPassword())){
                     builder.setTitle("Incorrect Password") // welcome the user
                             .setMessage("Password is incorrect.");
                 }
@@ -86,17 +80,27 @@ public class LoginActivity extends AppCompatActivity {
                             .setMessage("No User was found with that email or password.");
                 }
             }
-            if(userexist) {
 
-                Intent intent = new Intent(LoginActivity.this,ProfileActivity.class);
-                startActivity(intent);
 
-            }
+            boolean finalUserexist = userexist;
+            builder.setPositiveButton("Continue", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        if(finalUserexist) {
+                            Intent intent = new Intent(LoginActivity.this, ProfileActivity.class);
+                            startActivity(intent);
+                        }
+                        else{
+                            dialogInterface.dismiss();
+                        }
+                    }
+                });
+
+
 
             AlertDialog alert = builder.create();
             alert.show();
 
-            //todo implent data base retrivel here
         });
 
         signuplink.setOnClickListener(point ->{ //link to get them to the sign up page
@@ -141,25 +145,31 @@ public class LoginActivity extends AppCompatActivity {
                     //check for special symbols
                     if(password.contains("@") || password.contains("_") || password.contains("*") || password.contains("!") || password.contains("#")) {
                         //make a new user
-                        User newuser = new User(firstname, lastname, email, password, username);
+                        if(password.contains("1") || password.contains("2") || password.contains("3") || password.contains("4") || password.contains("5") || password.contains("6") || password.contains("7") || password.contains("8") || password.contains("9") || password.contains("0") ) {
+                            //make a the changes
+                            User newuser = new User(firstname, lastname, email, password, username);
 
-                        operate.open();
-                        operate.insertUser(firstname,lastname,username,email,password,"profile_pic"); //profile picture is empty for now
-                       // operate.close();
+                            operate.open();
+                            operate.insertUser(firstname, lastname, username, email, password, "profile_pic"); //profile picture is empty for now
+                            // operate.close();
 
-                        allUsers.add(newuser); // add the new user to the list
+                            allUsers.add(newuser); // add the new user to the list
 
-                        SharedPreferences sharedPref = getSharedPreferences("MyAppPreferences", Context.MODE_PRIVATE);
-                        SharedPreferences.Editor editor = sharedPref.edit();
+                            SharedPreferences sharedPref = getSharedPreferences("MyAppPreferences", Context.MODE_PRIVATE);
+                            SharedPreferences.Editor editor = sharedPref.edit();
 
-                        // this will help the stay logged in as they tranverse through pages
-                        editor.putString("username", newuser.getUserName());
-                        editor.putString("password", newuser.getPassword());
-                        editor.apply();
+                            // this will help the stay logged in as they tranverse through pages
+                            editor.putString("username", newuser.getUserName());
+                            editor.putString("password", newuser.getPassword());
+                            editor.apply();
 
-                        builder.setTitle("Welcome " + firstname ) // welcome the user
-                                .setMessage("User succesfully created");
-                        usercraeted = true;
+                            builder.setTitle("Welcome " + firstname) // welcome the user
+                                    .setMessage("User succesfully created");
+                            usercraeted = true;
+                        } else{
+                            builder.setTitle("Number Needed")
+                                    .setMessage("Password must have at least one Number.");
+                            }
 
                     }else {
                         builder.setTitle("Special Character ")

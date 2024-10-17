@@ -61,7 +61,7 @@ public class User {
         this.password  = password;
     }
 
-    public ArrayList<DrawingView> getMycanavas(){
+    public ArrayList<DrawingView> getMyCanavas(){
         return this.mycanavas;
     }
 

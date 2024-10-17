@@ -36,9 +36,21 @@ public class DatabaseOperations {
         dbHelper.updateUser(user);
     }
 
+    public void updateCanvas(int id,DrawingView drawingView){
+        dbHelper.updateCanvasInDatabase(id,drawingView);
+    }
+
+    public void setDatabaseContext(CanvasCreationActivity context){
+        dbHelper.setContext(context);
+    }
+
     // Get all users from the database
     public List<User> getDataBaseUsers() {
         return dbHelper.getAllUsers();
+    }
+
+    public void deleteCanvas(int canvasID){
+        dbHelper.deleteCanvasById(canvasID);
     }
 
     // Insert a new user
@@ -51,7 +63,6 @@ public class DatabaseOperations {
         values.put("password", password);
         values.put("profile_pic", profilePic);
 
-        Log.d("DataBaseOpertaions","sending values");
         // Error handling for insert
         try {
             return database.insertOrThrow("users", null, values);
@@ -63,20 +74,31 @@ public class DatabaseOperations {
     }
 
     // Insert a new canvas for a user
-    public long insertCanvas(long userId, String canvasName, String canvasData) {
+    public long insertCanvas(int userId, String canvasName, byte[] canvasData,int width,int height) {
+        // Ensure database is open
+        if (database == null || !database.isOpen()) {
+            Log.e("DatabaseError", "Database is not open.");
+            return -1; // or handle the error appropriately
+        }
+
         ContentValues values = new ContentValues();
         values.put("user_id", userId);
         values.put("canvas_name", canvasName);
-        values.put("canvas_data", canvasData);
+        values.put("canvas_data", canvasData); // Store binary data as a byte array
+        values.put("width", width);
+        values.put("height", height);
+        Log.d("Inserting", "canvases " + userId + " " + canvasName + " " + canvasData + width + " " + height);
 
+        // Attempt to insert canvas data into the database
         try {
             return database.insertOrThrow("canvases", null, values);
         } catch (SQLException e) {
-            // Log the error (optional) and return -1 to indicate failure
+            Log.e("DatabaseError", "Insert failed: " + e.getMessage());
             e.printStackTrace();
-            return -1;
+            return -1; // Indicate failure
         }
     }
+
 
     // Insert a new shape for a canvas
     public long insertShape(long canvasId, String shapeType, float xPosition, float yPosition, float size, String color, String paintStyle) {

@@ -9,8 +9,10 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PathMeasure;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewTreeObserver;
 
 import com.google.android.material.shape.ShapePath;
 
@@ -19,6 +21,8 @@ import java.util.List;
 
 public class DrawingView extends View {
     private int canvasid;
+    private int scaledWidth;
+    private int scaledHeight;
     private Bitmap bitmapToRedraw;
     private Paint currentPaint;  // Holds the current paint color
     private Path currentPath;    // Holds the current path being drawn
@@ -74,29 +78,57 @@ public class DrawingView extends View {
 
     public Bitmap getFullcanvas() {
 
-        Bitmap bitmap = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
+        Bitmap bitmap = Bitmap.createBitmap(this.scaledWidth, this.scaledHeight, Bitmap.Config.ARGB_8888);
+     //  Bitmap bitmap = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
 
         draw(canvas);
         return bitmap;
     }
 
+    public void setCanvasScale(int width,int height){
+        this.scaledWidth = width;
+        this.scaledHeight = height;
+    }
+    public int getScaledWidth(){return scaledWidth;};
+
+    public int getScaledHeight(){return scaledHeight;};
+
 
     public Bitmap captureThumbnail(int width, int height) {
         // Create a bitmap with the given width and height
 
-        Bitmap bitmap = Bitmap.createBitmap((int) (width * 1.75), (int) (height * 2), Bitmap.Config.ARGB_8888);
+//        Bitmap bitmap = Bitmap.createBitmap((int) (width * 1.75), (int) (height * 2), Bitmap.Config.ARGB_8888);
+//        Canvas canvas = new Canvas(bitmap);
+//
+//        // Calculate scaling factors to fit the entire view in the thumbnail
+//        float scaleX = (float) width / getScaledWidth();
+//        float scaleY = (float) height / getScaledHeight();
+//        float scale = Math.min(scaleX, scaleY); // Scale to fit the thumbnail size
+//
+//        // Scale the canvas
+//        canvas.scale((float) (scaleX * 1.57), scaleY * 2);
+//        // Translate the canvas to center the view
+//        canvas.translate((width - getWidth() * scale), (height - getHeight() * scale));
+//
+//        // Draw the view on the canvas
+//        draw(canvas);
+//
+//        return bitmap;
+
+        Bitmap bitmap = Bitmap.createBitmap((int) (width * 2), (int) (height * 2), Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
 
         // Calculate scaling factors to fit the entire view in the thumbnail
-        float scaleX = (float) width / getWidth();
-        float scaleY = (float) height / getHeight();
+        float scaleX = (float) width / getScaledWidth();
+        float scaleY = (float) height / getScaledHeight();
         float scale = Math.min(scaleX, scaleY); // Scale to fit the thumbnail size
 
         // Scale the canvas
-        canvas.scale((float) (scaleX * 1.57), scaleY * 2);
+        canvas.scale((float) (scaleX * 1.5), scaleY * 2);
+        //canvas.scale(scale, scale);
         // Translate the canvas to center the view
-        canvas.translate((width - getWidth() * scale), (height - getHeight() * scale));
+        canvas.translate((width - getScaledWidth() * scale), (height - getScaledHeight() * scale));
 
         // Draw the view on the canvas
         draw(canvas);
@@ -209,7 +241,6 @@ public class DrawingView extends View {
             shapes.remove(shapeToErase);
             allpaths.remove(shapeToErase);
             invalidate();  // Redraw the canvas after removing the shape
-            return;
         }
 
     }

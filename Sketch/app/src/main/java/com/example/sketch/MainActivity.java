@@ -1,8 +1,14 @@
 package com.example.sketch;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -11,38 +17,54 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.provider.ContactsContract;
+import android.provider.MediaStore;
+import android.text.Layout;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.SeekBar;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
     private ArrayList<DrawingView> allcanvas;
     private CanvasAdapter canvasAdapter;
     private RecyclerView gridLayout;
+    private DatabaseOperations operate = new DatabaseOperations(this);
+    private int profilePicWidth;
+    private User currentuser = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
-        allcanvas = new ArrayList<>();
+
+       // operate.cleanDataBase();
         setupmaincontent();
 
     }
@@ -71,13 +93,87 @@ public class MainActivity extends AppCompatActivity {
 
 
 public void setupmaincontent(){
-
-    canvasAdapter = new CanvasAdapter(allcanvas,this);
     setContentView(R.layout.activity_main);
+
+
+    boolean loggedin = false;
+
+    allcanvas = new ArrayList<>();
+
     ImageButton profileButton = findViewById(R.id.profilepicButton);
+
+    SharedPreferences sharedPref = getSharedPreferences("MyAppPreferences", Context.MODE_PRIVATE);
+    SharedPreferences.Editor editor = sharedPref.edit();
+
+    String username = sharedPref.getString("username", null);
+    String password = sharedPref.getString("password", null);
+
+    List<User> allUsers = operate.getDataBaseUsers();
+
+    if (username != null && password != null) {
+        loggedin = true;
+        for (User user : allUsers) {
+            if (username.equals(user.getUserName()) && password.equals(user.getPassword())) {
+                currentuser = user;
+                Log.d("User Id"," " + user.getid());
+                allcanvas = user.getMyCanavas();
+                for(DrawingView view : allcanvas){
+                    Log.d("count",view.getTitle() + " " + view.getCanvasid());
+                }
+
+                // Check if there is a profile picture
+                if (user.getProfilepic() != null && user.getProfilepic().length > 0) {
+                    // Use ViewTreeObserver to ensure the layout is done before getting width/height
+                    profileButton.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                        @Override
+                        public void onGlobalLayout() {
+                            // Remove the listener to avoid repeated calls
+                            profileButton.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+
+                            // Get the default width and height of the profile button after layout
+                            int defaultWidth = profileButton.getWidth();
+                            int defaultHeight = profileButton.getHeight();
+
+                            // Get the byte array of the user's image
+                            byte[] bytes = user.getProfilepic();
+
+                            // Decode the byte array into a Bitmap
+                            Bitmap originalBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+
+                            if (originalBitmap != null) {
+                                // Scale the Bitmap to the default width and height of the profile button
+                                Bitmap scaledBitmap = Bitmap.createScaledBitmap(originalBitmap, defaultWidth, defaultHeight, true);
+
+                                // Set the scaled bitmap as the image for the profile button
+                                profileButton.setImageBitmap(scaledBitmap);
+                            } else {
+                                Log.e("Error", "Could not decode byte array into a Bitmap.");
+                            }
+                        }
+                    });
+                }
+            }
+        }
+    }
+    canvasAdapter = new CanvasAdapter(allcanvas,this);
+
 
     gridLayout = findViewById(R.id.grid_layout); //this is still a reycle view but named to gridlayout for the layout
 
+
+    gridLayout.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+        @Override
+        public void onGlobalLayout() {
+            // This gets called once the layout is complete and the view has its final dimensions
+
+            // Remove the listener to avoid multiple calls
+            gridLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+
+            // Now you can safely access the width and height
+            Log.d("Layout Width", gridLayout.getWidth() + "");
+
+        }
+    });
     GridLayoutManager manager = new GridLayoutManager(this, 2); // 2 columns
     gridLayout.setLayoutManager(manager);
     gridLayout.setAdapter(canvasAdapter);
@@ -85,44 +181,35 @@ public void setupmaincontent(){
     canvasAdapter.notifyDataSetChanged();
     FloatingActionButton newcanvas = findViewById(R.id.newcanvas);// 2 colums to display the canvases
 
-    LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
-    View profileView = inflater.inflate(R.layout.profile_options, null); // profile select menu
 
-
-    profileButton.setOnClickListener(profile ->{
-        PopupWindow popupWindow = new PopupWindow(profileView,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT);
-
-        popupWindow.setFocusable(true);
-        popupWindow.setOutsideTouchable(true); // Dismiss popup when touching outside
-        popupWindow.showAsDropDown(profile, 0, 0, Gravity.BOTTOM);
-
-        Button newProfile = profileView.findViewById(R.id.newAccountButton);
-        Button editProfile = profileView.findViewById(R.id.editProfileButton);
-        Button signInButton = profileView.findViewById(R.id.signinButton);
-
-        newProfile.setOnClickListener(addProfile ->{
-            Intent intent = new Intent(MainActivity.this, LoginActivity.class);
-            startActivity(intent);
-            //todo
-            popupWindow.dismiss();
-        });
-
-        editProfile.setOnClickListener(editprofile ->{
-            popupWindow.dismiss();
-            //todo
-        });
-
-        signInButton.setOnClickListener(login ->{
-
-            //todo
-        });
-
+    boolean finalLoggedin = loggedin;
+    profileButton.setOnClickListener(new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            profilePicWidth = v.getWidth();
+            
+            if(!finalLoggedin) {
+                Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+                startActivity(intent);
+            }else{
+                Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
+                startActivity(intent);
+            }
+            
+               
+        }
     });
-
+    AlertDialog.Builder builder = new AlertDialog.Builder(this);
     newcanvas.setOnClickListener(v -> {
-        makenewCanvas();
+        if(finalLoggedin) {
+            Intent intent = new Intent(MainActivity.this,CanvasCreationActivity.class);
+            startActivity(intent);
+        }else {
+            builder.setTitle("Login Needed").setMessage("Please Login to Continue");
+            builder.setCancelable(true);
+            builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
+            builder.show();
+        }
 
     });
 
@@ -130,6 +217,7 @@ public void setupmaincontent(){
 }
     @SuppressLint("WrongViewCast")
     public void makenewCanvas( ){
+
     setContentView(R.layout.canvas);
      DrawingView canvas = findViewById(R.id.drawing_view); // This is a java class and an xml layout id
 
@@ -171,7 +259,7 @@ public void setupmaincontent(){
     View shapeselect = inflater.inflate(R.layout.addshapemenu,null);
 
     eraserButton.setOnClickListener(erase ->{
-
+    //todo fix the eraser mode
         canvas.enableEraserMode();
     });
 
@@ -249,12 +337,7 @@ public void setupmaincontent(){
     shapesizer.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
         @Override
         public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-            // This method is called when the progress is changed.
-            // Use 'progress' as the current size of the brush.
-            // For example, set the brush size to this value:
-            //  brushsize = progress;
-            // Update your drawing tool with the new brush size
-            // Example: paint.setStrokeWidth(brushSize);
+
             canvas.setCurrentShapeSize(progress*6);
         }
 
@@ -268,8 +351,6 @@ public void setupmaincontent(){
         @Override
         public void onStopTrackingTouch(SeekBar seekBar) {
 
-
-
         }
     }
     );
@@ -279,13 +360,13 @@ public void setupmaincontent(){
     AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
     saveButton.setOnClickListener(s -> {
-        PopupWindow popupWindow = new PopupWindow(savewindow,
+        PopupWindow popupSaveWindow = new PopupWindow(savewindow,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
 
-        popupWindow.setFocusable(true);
-        popupWindow.setOutsideTouchable(true); // Dismiss popup when touching outside
-        popupWindow.showAsDropDown(s, 0, 0, Gravity.BOTTOM);
+        popupSaveWindow.setFocusable(true);
+        popupSaveWindow.setOutsideTouchable(true); // Dismiss popup when touching outside
+        popupSaveWindow.showAsDropDown(s, 0, 0, Gravity.BOTTOM);
 
         //save menu attributes
         EditText title = savewindow.findViewById(R.id.canvas_title);
@@ -297,7 +378,7 @@ public void setupmaincontent(){
         disregardbutton.setOnClickListener(cancel -> {
 
 
-            popupWindow.dismiss();
+            popupSaveWindow.dismiss();
             setupmaincontent();
 
 
@@ -318,9 +399,22 @@ public void setupmaincontent(){
             builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
             builder.show();
 
+
+
+
+            currentuser.getMyCanavas().add(canvas);
             allcanvas.add(canvas); //add the new canvas
 
-            popupWindow.dismiss();
+            //capturing the via Bitmap then converting to bytes to insert into database
+            Bitmap bitmap = canvas.getFullcanvas();
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
+            byte[] imageBytes = outputStream.toByteArray();
+
+
+            //operate.insertCanvas(currentuser.getid(),canvas.getTitle(),imageBytes);
+
+            popupSaveWindow.dismiss();
             setupmaincontent();
         });
     });
