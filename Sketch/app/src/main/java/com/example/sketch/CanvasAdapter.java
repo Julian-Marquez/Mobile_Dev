@@ -1,13 +1,38 @@
 package com.example.sketch;
 
+import static android.app.Activity.RESULT_OK;
 import static android.content.Context.LAYOUT_INFLATER_SERVICE;
 
 import android.annotation.SuppressLint;
+
+//import com.google.android.gms.fitness.data.Field;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.*;
+import com.google.android.gms.location.Priority;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapView;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.location.Location;
+
+import android.Manifest;
+
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.location.LocationRequest;
+import android.net.Uri;
+import android.os.Environment;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -23,11 +48,18 @@ import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
+//import androidx.room.vo.Field;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class CanvasAdapter extends RecyclerView.Adapter<CanvasAdapter.CanvasViewHolder> {
@@ -36,10 +68,14 @@ public class CanvasAdapter extends RecyclerView.Adapter<CanvasAdapter.CanvasView
     MainActivity mainpage;
     private int thumbnailWidth;
     private int  thumbnailHeight;
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
+    private FusedLocationProviderClient fusedLocationClient;
+    private GoogleMap mMap;
 
     public CanvasAdapter(ArrayList<DrawingView> canvasList,MainActivity mainpage) {
         this.canvasList = canvasList;
         this.mainpage = mainpage;
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(mainpage);
     }
 
     @NonNull
@@ -56,6 +92,12 @@ public class CanvasAdapter extends RecyclerView.Adapter<CanvasAdapter.CanvasView
         DrawingView canvas = canvasList.get(position);
 
         Bitmap thumbnail = canvas.captureThumbnail(400 , 400);
+        SharedPreferences sharedPref = mainpage.getSharedPreferences("MyAppPreferences", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+
+        int width = sharedPref.getInt("Width",0);
+        int height = sharedPref.getInt("Height",0);
+
 
         holder.title.setText(canvas.getTitle());
 
@@ -74,6 +116,7 @@ public class CanvasAdapter extends RecyclerView.Adapter<CanvasAdapter.CanvasView
             // Find buttons and log if they are found
             Button deleteButton = optionsView.findViewById(R.id.deleteButton);
             Button saveImage = optionsView.findViewById(R.id.save_as_image);
+            Button locationButton = optionsView.findViewById(R.id.locationSetButton);
 
             // Attach delete button listener
             deleteButton.setOnClickListener(delete -> {
@@ -90,19 +133,76 @@ public class CanvasAdapter extends RecyclerView.Adapter<CanvasAdapter.CanvasView
                 mainpage.setupmaincontent();
             });
 
-            // Attach save image button listener
+            locationButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    // Check if location permissions are granted
+                    if (ContextCompat.checkSelfPermission(mainpage, Manifest.permission.ACCESS_FINE_LOCATION)
+                            != PackageManager.PERMISSION_GRANTED) {
+                        // Request permission if not granted
+                        String[] per = {Manifest.permission.ACCESS_FINE_LOCATION};
+                        ActivityCompat.requestPermissions(mainpage,
+                                per, LOCATION_PERMISSION_REQUEST_CODE);
+                    } else {
+                        // Permissions are already granted, get the location
+                        Log.d("Access", "Access has been granted");
+                    }
+
+                    // Dismiss the popup window if it exists
+                    if (popupWindow != null) {
+                        popupWindow.dismiss();
+                    }
+                }
+
+            });
+
             saveImage.setOnClickListener(save -> {
-                Log.d("Popup", "Save Image Button Clicked"); // Debug log to verify click is detected
-                // Handle image saving logic
+                Bitmap bitmap = canvas.getFullcanvas();
+
+                String filename = canvas.getTitle() + ".png";
+
+                File myfile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),filename);
+                try (FileOutputStream out = new FileOutputStream(myfile)) {
+                    // Compress the bitmap and write it to the output stream
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+                    out.flush();
+
+                    Toast.makeText(mainpage, "Image saved: " + myfile.getAbsolutePath(), Toast.LENGTH_SHORT).show();
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    Toast.makeText(mainpage, "Error saving image", Toast.LENGTH_SHORT).show();
+                }
                 popupWindow.dismiss();
             });
         });
 
         //draw(canvas);
-        holder.image.setImageBitmap(thumbnail);
+        if(width != 0 && height != 0){
+            holder.image.setImageBitmap(canvas.ScaledCanvas(width,height));
+        }else {
+            holder.image.setImageBitmap(thumbnail);
+        }
         holder.image.setClipToOutline(false);
-      //  holder.image.setImageBitmap(canvas.getFullcanvas());
+        holder.image.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                // This gets called once the layout is complete and the view has its final dimensions
 
+                // Remove the listener to avoid multiple calls
+                holder.image.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+
+                // Now you can safely access the width and height
+                thumbnailHeight = holder.image.getHeight();
+                thumbnailWidth = holder.image.getWidth();
+                editor.putInt("Width",holder.image.getWidth());
+                editor.putInt("Height",holder.image.getHeight());
+                editor.apply();
+            }
+        });
+      //  holder.image.setImageBitmap(canvas.getFullcanvas());
+        Log.d("Thumbnail before", width + " " + height);
 
 
         holder.itemView.setOnClickListener(v -> {
@@ -117,7 +217,7 @@ public class CanvasAdapter extends RecyclerView.Adapter<CanvasAdapter.CanvasView
             editCanvas.setTitle(canvas.getTitle());
 
             // Capture the original bitmap from the canvas (use the actual bitmap from the original canvas)
-            Bitmap bitmap = canvas.getFullcanvas(); // Assuming getFullcanvas() returns the full bitmap
+            Bitmap bitmap = canvas.getFullcanvas();
 
             if (bitmap != null) {
                 // Set the canvas scale and id before setting the bitmap
@@ -171,6 +271,7 @@ public class CanvasAdapter extends RecyclerView.Adapter<CanvasAdapter.CanvasView
             redoButton.setOnClickListener(redo -> {
 
                 if (editCanvas.getPaths() != null) {
+                    Log.d("Redo","Pushed");
                     editCanvas.reAddMostRecent();  // Remove the most recent path
 
                 }
@@ -178,7 +279,8 @@ public class CanvasAdapter extends RecyclerView.Adapter<CanvasAdapter.CanvasView
 
             undoButton.setOnClickListener(undo ->{
                 // Check if there are paths in the canvas and remove the most recent one
-                if (editCanvas.getPaths() != null && !canvas.getPaths().isEmpty()) {
+                if (editCanvas.getPaths() != null && !editCanvas.getPaths().isEmpty()) {
+                    Log.d("Undo","Pushed");
                     editCanvas.removeMostRecent();  // Remove the most recent path
 
                 }
@@ -275,6 +377,7 @@ public class CanvasAdapter extends RecyclerView.Adapter<CanvasAdapter.CanvasView
                 Button confrim_save = savewindow.findViewById((R.id.confirm_save)); // this is the button within save button
                 Button cancelbutton = savewindow.findViewById(R.id.cancel); // if the user wants to cancel there changes
 
+                titleText.setText(editCanvas.getTitle());
 
                 cancelbutton.setOnClickListener(cancel -> {
 
@@ -390,7 +493,39 @@ public class CanvasAdapter extends RecyclerView.Adapter<CanvasAdapter.CanvasView
 
 
 
+
+
     }
+
+        // Start the MapsActivity to select a location
+
+
+
+
+    public void onMapReady(GoogleMap googleMap) {
+        mMap = googleMap;
+
+        // Set a click listener for the map
+        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(LatLng latLng) {
+                // Add a marker at the selected location
+                mMap.clear(); // Clear previous markers
+                mMap.addMarker(new MarkerOptions().position(latLng));
+                mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+
+                // Return the selected location to the previous activity
+                Intent resultIntent = new Intent();
+                resultIntent.putExtra("latitude", latLng.latitude);
+                resultIntent.putExtra("longitude", latLng.longitude);
+                Log.d("Location", latLng.latitude + " " + latLng.longitude);
+                mainpage.setResult(RESULT_OK, resultIntent);
+                mainpage.finish(); // Close the MapsActivity
+            }
+        });
+    }
+
+
 
     @Override
     public int getItemCount() {

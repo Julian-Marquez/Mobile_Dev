@@ -1,6 +1,7 @@
 package com.example.sketch;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -93,6 +94,30 @@ public class DrawingView extends View {
     public int getScaledWidth(){return scaledWidth;};
 
     public int getScaledHeight(){return scaledHeight;};
+
+    public Bitmap ScaledCanvas(int width, int height){
+
+        Bitmap bitmap = Bitmap.createBitmap((int) (width * 2), (int) (height * 2), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+
+        // Calculate scaling factors to fit the entire view in the thumbnail
+        float scaleX = (float) width / getScaledWidth();
+        float scaleY = (float) height / getScaledHeight();
+        float scale = Math.min(scaleX, scaleY); // Scale to fit the thumbnail size
+
+        // Scale the canvas
+        canvas.scale((float) (scaleX * 1.5), scaleY * 2);
+        //canvas.scale(scale, scale);
+        // Translate the canvas to center the view
+        canvas.translate((width - getScaledWidth() * scale), (height - getScaledHeight() * scale));
+
+        // Draw the view on the canvas
+        draw(canvas);
+
+        return bitmap;
+
+    }
+
 
 
     public Bitmap captureThumbnail(int width, int height) {

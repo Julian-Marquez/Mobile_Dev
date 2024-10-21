@@ -83,10 +83,6 @@ public class CanvasCreationActivity extends AppCompatActivity {
                     // Now you can safely access the width and height
                     width = canvas.getWidth();
                     height = canvas.getHeight();
-
-                    Log.d("Canvas Creation", width + " " + height);
-
-
                 }
             });
             canvas.setCanvasScale(width,height);
