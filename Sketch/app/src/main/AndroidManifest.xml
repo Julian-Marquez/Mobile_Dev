@@ -33,8 +33,19 @@
             android:name=".CanvasCreationActivity"
             android:exported="true" >
         </activity>
+        <activity
+            android:name=".LocationService"
+            android:exported="true" >
+        </activity>
 
     </application>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+
+
+
 
 </manifest>
