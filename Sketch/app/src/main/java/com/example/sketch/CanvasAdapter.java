@@ -194,6 +194,7 @@ public class CanvasAdapter extends RecyclerView.Adapter<CanvasAdapter.CanvasView
                 holder.image.getViewTreeObserver().removeOnGlobalLayoutListener(this);
 
                 // Now you can safely access the width and height
+                // this sets the thumbnail scale for each device this not specific integer because each device has a different aspect Ratio
                 thumbnailHeight = holder.image.getHeight();
                 thumbnailWidth = holder.image.getWidth();
                 editor.putInt("Width",holder.image.getWidth());
@@ -201,7 +202,7 @@ public class CanvasAdapter extends RecyclerView.Adapter<CanvasAdapter.CanvasView
                 editor.apply();
             }
         });
-      //  holder.image.setImageBitmap(canvas.getFullcanvas());
+
         Log.d("Thumbnail before", width + " " + height);
 
 
@@ -223,11 +224,9 @@ public class CanvasAdapter extends RecyclerView.Adapter<CanvasAdapter.CanvasView
                 // Set the canvas scale and id before setting the bitmap
                 editCanvas.setCanvasScale(canvas.getScaledWidth(), canvas.getScaledHeight());
                 editCanvas.setCanvasId(canvas.getCanvasid());
-                Log.d("Canvas Error", canvas.getScaledWidth() + " " +canvas.getScaledHeight());
-
                 // Pass the bitmap to the new canvas for redrawing
-                editCanvas.setBitmap(bitmap);  // Assuming your DrawingView has a setBitmap() method
-                editCanvas.invalidate();       // Redraw the canvas
+                editCanvas.setBitmap(bitmap);
+                editCanvas.invalidate();
             } else {
                 Log.e("Canvas Error", "Failed to get full canvas bitmap.");
             }
@@ -273,7 +272,6 @@ public class CanvasAdapter extends RecyclerView.Adapter<CanvasAdapter.CanvasView
                 if (editCanvas.getPaths() != null) {
                     Log.d("Redo","Pushed");
                     editCanvas.reAddMostRecent();  // Remove the most recent path
-
                 }
             });
 

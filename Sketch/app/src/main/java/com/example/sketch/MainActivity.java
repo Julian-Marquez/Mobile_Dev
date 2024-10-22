@@ -169,9 +169,6 @@ public void setupmaincontent(){
             // Remove the listener to avoid multiple calls
             gridLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
 
-            // Now you can safely access the width and height
-            Log.d("Layout Width", gridLayout.getWidth() + "");
-            Log.d("Layout Height", gridLayout.getHeight() + "");
         }
     });
     GridLayoutManager manager = new GridLayoutManager(this, 2); // 2 columns
@@ -179,8 +176,9 @@ public void setupmaincontent(){
     gridLayout.setAdapter(canvasAdapter);
     // Inside your activity or fragment
     canvasAdapter.notifyDataSetChanged();
-    FloatingActionButton newcanvas = findViewById(R.id.newcanvas);// 2 colums to display the canvases
 
+    FloatingActionButton newcanvas = findViewById(R.id.newcanvas);
+    FloatingActionButton newCanvasGame = findViewById(R.id.canvasGameButton);
 
     boolean finalLoggedin = loggedin;
     profileButton.setOnClickListener(new View.OnClickListener() {
@@ -211,6 +209,17 @@ public void setupmaincontent(){
             builder.show();
         }
 
+    });
+    newCanvasGame.setOnClickListener(v -> {
+        if(finalLoggedin) {
+            Intent intent = new Intent(MainActivity.this,CanvasGameActivity.class);
+            startActivity(intent);
+        }else {
+            builder.setTitle("Login Needed").setMessage("Please Login to Continue");
+            builder.setCancelable(true);
+            builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
+            builder.show();
+        }
     });
 
 
