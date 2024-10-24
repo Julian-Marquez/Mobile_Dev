@@ -83,9 +83,12 @@ public class CanvasCreationActivity extends AppCompatActivity {
                     // Now you can safely access the width and height
                     width = canvas.getWidth();
                     height = canvas.getHeight();
+                    canvas.setCanvasScale(width,height);
                 }
             });
-            canvas.setCanvasScale(width,height);
+
+           // canvas.getFullcanvas();
+
 
             SeekBar brushsize = findViewById(R.id.brush_size);
 
@@ -109,6 +112,7 @@ public class CanvasCreationActivity extends AppCompatActivity {
 
             // Canvas button functionality
             ImageButton addshapebutton = findViewById(R.id.newshapebutton);
+            ImageButton mirrorButton = findViewById(R.id.mirrorButton);
             ImageButton eraserButton = findViewById(R.id.eraserButton);
             ImageButton undoButton = findViewById(R.id.undobutton);
             ImageButton redoButton = findViewById(R.id.redobutton);
@@ -123,9 +127,15 @@ public class CanvasCreationActivity extends AppCompatActivity {
             View savewindow = inflater.inflate(R.layout.save_option, null);
             View shapeselect = inflater.inflate(R.layout.addshapemenu, null);
 
+            mirrorButton.setOnClickListener(mirror -> {
+                canvas.getFullcanvas();
+               // canvas.setFillMode(true);
+                canvas.mirrorCanvas(true);
+            });
+
             eraserButton.setOnClickListener(erase -> {
                 //todo fix the eraser mode
-                canvas.enableEraserMode();
+                //canvas.enableEraserMode();
             });
 
             redoButton.setOnClickListener(redo -> {
@@ -219,8 +229,6 @@ public class CanvasCreationActivity extends AppCompatActivity {
                                                   }
             );
 
-            // Create the PopupWindow
-
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
             User finalCurrentuser = currentuser;
@@ -267,8 +275,6 @@ public class CanvasCreationActivity extends AppCompatActivity {
 
                     finalCurrentuser.getMyCanavas().add(canvas);
                     finalAllcanvas.add(canvas); //add the new canvas
-
-
 
                     // Create a Bitmap with the same dimensions as the DrawingView
                     Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);

@@ -73,7 +73,7 @@ public class CanvasGameActivity extends AppCompatActivity {
                 "A blooming flower",
                 "A friendly alien",
                 "A tropical island",
-                "A quirky monster",
+                "A spooky monster",
                 "A cozy campfire"
         };
 
@@ -95,10 +95,7 @@ public class CanvasGameActivity extends AppCompatActivity {
                 allcanvas = user.getMyCanavas();
             }
 
-
-
             canvas.setTitle(finalOption);
-
 
             canvas.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
                 @Override
@@ -136,7 +133,6 @@ public class CanvasGameActivity extends AppCompatActivity {
                    showOption.setPositiveButton("Start", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
-                        Log.d("pushed","start has been pushed");
                             editor.putBoolean("tutorial", true);
                             editor.apply();
                             countdown(300);
@@ -178,6 +174,7 @@ public class CanvasGameActivity extends AppCompatActivity {
 
             // Canvas button functionality
             ImageButton addshapebutton = findViewById(R.id.newshapebutton);
+            ImageButton mirrorButton = findViewById(R.id.mirrorButton);
             ImageButton eraserButton = findViewById(R.id.eraserButton);
             ImageButton undoButton = findViewById(R.id.undobutton);
             ImageButton redoButton = findViewById(R.id.redobutton);
@@ -192,6 +189,11 @@ public class CanvasGameActivity extends AppCompatActivity {
             View savewindow = inflater.inflate(R.layout.save_option, null);
             View shapeselect = inflater.inflate(R.layout.addshapemenu, null);
 
+            mirrorButton.setOnClickListener(mirror -> {
+                canvas.getFullcanvas();
+                // canvas.setFillMode(true);
+                canvas.mirrorCanvas(true);
+            });
             eraserButton.setOnClickListener(erase -> {
                 //todo fix the eraser mode
                 canvas.enableEraserMode();

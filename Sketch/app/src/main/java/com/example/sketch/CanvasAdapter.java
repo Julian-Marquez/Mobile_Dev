@@ -227,8 +227,6 @@ public class CanvasAdapter extends RecyclerView.Adapter<CanvasAdapter.CanvasView
                 // Pass the bitmap to the new canvas for redrawing
                 editCanvas.setBitmap(bitmap);
                 editCanvas.invalidate();
-            } else {
-                Log.e("Canvas Error", "Failed to get full canvas bitmap.");
             }
 
             brushsize.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -256,6 +254,8 @@ public class CanvasAdapter extends RecyclerView.Adapter<CanvasAdapter.CanvasView
 
             // Clear button functionality
             ImageButton addshapebutton = mainpage.findViewById(R.id.newshapebutton);
+            ImageButton mirrorButton = mainpage.findViewById(R.id.mirrorButton);
+            ImageButton eraserButton = mainpage.findViewById(R.id.eraserButton);
             ImageButton redoButton = mainpage.findViewById(R.id.redobutton);
             ImageButton undoButton = mainpage.findViewById(R.id.undobutton);
             SeekBar shapesizer = mainpage.findViewById(R.id.shapesizer);
@@ -266,6 +266,16 @@ public class CanvasAdapter extends RecyclerView.Adapter<CanvasAdapter.CanvasView
              View popupView = inflater.inflate(R.layout.color_select, null, false);
             View savewindow = inflater.inflate(R.layout.save_option, null, false);
             View shapeselect = inflater.inflate(R.layout.addshapemenu, null, false);
+
+            mirrorButton.setOnClickListener(mirror -> {
+                editCanvas.getFullcanvas();
+                // canvas.setFillMode(true);
+                editCanvas.mirrorCanvas(true);
+            });
+            eraserButton.setOnClickListener(erase -> {
+                //todo fix the eraser mode
+                editCanvas.enableEraserMode();
+            });
 
             redoButton.setOnClickListener(redo -> {
 

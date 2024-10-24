@@ -9,6 +9,7 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PathMeasure;
+import android.graphics.Point;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -18,7 +19,11 @@ import android.view.ViewTreeObserver;
 import com.google.android.material.shape.ShapePath;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
+import java.util.HashSet;
+
 
 public class DrawingView extends View {
     private int canvasid;
@@ -39,6 +44,9 @@ public class DrawingView extends View {
     private boolean eraserMode = false;
     private List<Object> removeditems = new ArrayList<>(); // keep track of removed items to re add
     private String currentShapeType; // Default size for new shapes
+    private Bitmap bitmap;
+    private boolean isFillMode;
+    private List<Path> fillpaths = new ArrayList<>();
 
     private class DrawnPath {
         Path path;
@@ -79,25 +87,25 @@ public class DrawingView extends View {
 
     public Bitmap getFullcanvas() {
 
-        Bitmap bitmap = Bitmap.createBitmap(this.scaledWidth, this.scaledHeight, Bitmap.Config.ARGB_8888);
-     //  Bitmap bitmap = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
+         this.bitmap = Bitmap.createBitmap(this.scaledWidth, this.scaledHeight, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
 
         draw(canvas);
-        return bitmap;
+        return this.bitmap;
     }
 
     public void setCanvasScale(int width,int height){
         this.scaledWidth = width;
         this.scaledHeight = height;
     }
+
     public int getScaledWidth(){return scaledWidth;};
 
     public int getScaledHeight(){return scaledHeight;};
 
     public Bitmap ScaledCanvas(int width, int height){
 
-        Bitmap bitmap = Bitmap.createBitmap((int) (width * 2), (int) (height * 2), Bitmap.Config.ARGB_8888);
+        this.bitmap = Bitmap.createBitmap((int) (width * 2), (int) (height * 2), Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
 
         // Calculate scaling factors to fit the entire view in the thumbnail
@@ -119,27 +127,7 @@ public class DrawingView extends View {
     }
 
 
-
     public Bitmap captureThumbnail(int width, int height) {
-        // Create a bitmap with the given width and height
-
-//        Bitmap bitmap = Bitmap.createBitmap((int) (width * 1.75), (int) (height * 2), Bitmap.Config.ARGB_8888);
-//        Canvas canvas = new Canvas(bitmap);
-//
-//        // Calculate scaling factors to fit the entire view in the thumbnail
-//        float scaleX = (float) width / getScaledWidth();
-//        float scaleY = (float) height / getScaledHeight();
-//        float scale = Math.min(scaleX, scaleY); // Scale to fit the thumbnail size
-//
-//        // Scale the canvas
-//        canvas.scale((float) (scaleX * 1.57), scaleY * 2);
-//        // Translate the canvas to center the view
-//        canvas.translate((width - getWidth() * scale), (height - getHeight() * scale));
-//
-//        // Draw the view on the canvas
-//        draw(canvas);
-//
-//        return bitmap;
 
         Bitmap bitmap = Bitmap.createBitmap((int) (width * 2), (int) (height * 2), Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
@@ -217,14 +205,6 @@ public class DrawingView extends View {
         invalidate();
     }
 
-
-
-    private Matrix getScaleMatrix(float scaleX, float scaleY) {
-        Matrix matrix = new Matrix();
-        matrix.setScale(scaleX * 2, scaleY * 2);
-        return matrix;
-    }
-
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
@@ -251,8 +231,13 @@ public class DrawingView extends View {
             canvas.drawPath(dp.path, dp.paint);
         }
         // Draw shapes
-        for (DrawnShape ds : shapes) {  // Assuming you have a List<DrawnShape> shapes
+        for (DrawnShape ds : shapes) {
             canvas.drawPath(ds.path, ds.paint);
+        }
+        if(isFillMode) {
+            for (int i = 0; i < fillpaths.size(); i++) {
+                canvas.drawPath(fillpaths.get(i), currentPaint);
+            }
         }
 
         // Draw the current path
@@ -279,6 +264,83 @@ public class DrawingView extends View {
         }
     }
 
+    public void floodFill(int x, int y, int targetColor, int replacementColor) {
+        if (targetColor == replacementColor) {
+            return; // Target color is already the replacement color
+        }
+
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+        HashSet<Point> visited = new HashSet<>();
+
+        Queue<Point> queue = new LinkedList<>();
+        queue.add(new Point(x, y));
+        Path fillpath = new Path();
+        fillpath.moveTo(x, y);
+
+        while (!queue.isEmpty()) {
+            Point point = queue.poll();
+            int px = point.x;
+            int py = point.y;
+
+            if (px < 0 || py < 0 || px >= width || py >= height || visited.contains(point)) {
+                continue; // Skip out-of-bounds or visited points
+            }
+
+            int currentColor = bitmap.getPixel(px, py);
+
+            if (currentColor == targetColor) {
+                bitmap.setPixel(px, py, replacementColor);
+                visited.add(point);
+                fillpath.lineTo(px, py);
+
+                // Add neighboring points to queue
+                queue.add(new Point(px + 1, py));
+                queue.add(new Point(px - 1, py));
+                queue.add(new Point(px, py + 1));
+                queue.add(new Point(px, py - 1));
+            }
+        }
+
+        currentPath.addPath(fillpath);
+        invalidate(); // Redraw the view to show the filling
+    }
+
+
+
+
+
+    public void mirrorCanvas(boolean horizontal) {
+        Matrix mirrorMatrix = new Matrix();
+
+        // Horizontal mirroring flip across Y-axis
+        if (horizontal) {
+            mirrorMatrix.setScale(-1, 1, getWidth() / 2, getHeight() / 2);  // Flip across Y-axis
+        } else {
+            // Vertical mirroring (flip across X-axis)
+            mirrorMatrix.setScale(1, -1, getWidth() / 2, getHeight() / 2);  // Flip across X-axis
+        }
+
+        for (DrawnPath path : paths) {
+            path.path.transform(mirrorMatrix);
+        }
+
+        for (DrawnShape shape : shapes) {
+            shape.path.transform(mirrorMatrix);
+        }
+
+        // Redraw the canvas with mirrored content
+        invalidate();
+    }
+
+    private int getPixelColor(int x, int y) {
+        return bitmap.getPixel(x, y);
+    }
+
+    public void setFillMode(boolean fillMode){
+        isFillMode = fillMode;
+    }
+
     private DrawnShape selectedShape = null;  // Keep track of the selected shape
     private float lastTouchX, lastTouchY;     // Track the last touch coordinates
 
@@ -289,12 +351,24 @@ public class DrawingView extends View {
 
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
+                currentPath = new Path();  // Create a new Path object
+                currentPath.moveTo(x, y);
                 if (eraserMode) {
                     // In eraser mode, check if a shape or path is touched, and remove it
+
                     eraseIfTouched(x, y);
                     return true;  // Stop further event handling as we are erasing
                 }
-                // Check if the touch point is inside an existing shape
+                if (isFillMode) {
+                    int pixelX = (int) x;
+                    int pixelY = (int) y;
+                    int targetColor = bitmap.getPixel(pixelX, pixelY);
+                    int fillColor = currentPaint.getColor();
+                    floodFill(pixelX, pixelY, targetColor, fillColor);
+                    invalidate();  // Redraw the view to show the filling
+                    return true;  // Return after filling to stop further handling
+                }
+
                 selectedShape = getTouchedShape(x, y);
                 if (selectedShape != null) {
                     lastTouchX = x;
@@ -307,9 +381,8 @@ public class DrawingView extends View {
                     // Add the shape at the touch coordinates
                     addShape(currentShapeType, x, y, currentShapeSize);
                     invalidate();  // Request to redraw the view
-                    return true;  // Stop further event handling as a shape is added
+                    return true;
                 } else {
-                    // If no shape mode, start drawing freehand
                     currentPath.moveTo(x, y);
                 }
                 break;
@@ -342,7 +415,6 @@ public class DrawingView extends View {
                 break;
         }
 
-        // Request to redraw the view
         invalidate();
         return true;
     }
@@ -412,6 +484,7 @@ public class DrawingView extends View {
     public void setCanvasId(int id){
         this.canvasid = id;
     }
+
     public int getCanvasid(){
         return this.canvasid;
     }
@@ -433,7 +506,6 @@ public class DrawingView extends View {
             this.path = createShapePath(shapeType, x, y, size);  // Initialize path
         }
 
-        // Check if the touch point is within the shape
         // Check if the touch point is within the shape
         boolean contains(float touchX, float touchY) {
             switch (shapeType) {
