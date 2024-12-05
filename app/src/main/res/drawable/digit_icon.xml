@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Background Circle -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@color/white"/> <!-- Background color -->
+            <size android:width="64dp" android:height="64dp"/>  <!-- Size of the icon -->
+        </shape>
+    </item>
+
+    <!-- Grid Lines -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/black"/> <!-- Line color -->
+            <size android:width="4dp" android:height="64dp"/> <!-- Vertical line -->
+        </shape>
+        <clip>
+            <rect android:bottom="0dp" android:right="32dp"/> <!-- Halfway for vertical line -->
+        </clip>
+    </item>
+
+    <item android:left="32dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/black"/> <!-- Line color -->
+            <size android:width="4dp" android:height="64dp"/> <!-- Vertical line -->
+        </shape>
+    </item>
+
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/black"/> <!-- Line color -->
+            <size android:width="64dp" android:height="4dp"/> <!-- Horizontal line -->
+        </shape>
+        <clip>
+            <rect android:right="0dp" android:bottom="32dp"/> <!-- Halfway for horizontal line -->
+        </clip>
+    </item>
+
+    <item android:top="32dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/black"/> <!-- Line color -->
+            <size android:width="64dp" android:height="4dp"/> <!-- Horizontal line -->
+        </shape>
+    </item>
+
+</layer-list>

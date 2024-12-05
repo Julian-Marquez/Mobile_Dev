@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:context=".CanvasCreationActivity">
+
+    <LinearLayout
+        android:id="@+id/main_canvas"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- Toolbar with color and brush size options -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <!-- Color Picker -->
+            <Button
+                android:id="@+id/color_button"
+                android:layout_width="192px"
+                android:layout_height="match_parent"
+                android:contentDescription=" "
+                android:background="@mipmap/select_color_button"
+                 />
+
+            <!-- Brush Size -->
+            <ImageButton
+                android:id="@+id/undobutton"
+                android:layout_width="58dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@mipmap/gobackbackgound"
+                android:contentDescription="Adds a new shape"
+                app:srcCompat="@android:drawable/ic_menu_revert" />
+
+            <ImageButton
+                android:id="@+id/redobutton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@mipmap/redobackground"
+                app:srcCompat="@android:drawable/ic_menu_rotate" />
+
+            <ImageButton
+                android:id="@+id/newshapebutton"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@mipmap/add_background"
+                android:contentDescription="Adds a new shape"
+                app:srcCompat="@android:drawable/ic_input_add" />
+
+            <SeekBar
+                android:id="@+id/brush_size"
+                android:layout_width="132dp"
+                android:layout_height="match_parent"
+                android:max="50"
+                android:thumbTint="@color/black"
+                android:thumb="@android:drawable/ic_menu_edit"
+                android:progress="10" />
+
+            <ImageButton
+                android:id="@+id/save_button"
+                android:layout_width="211px"
+                android:layout_height="156px"
+                android:layout_weight="1"
+                android:tint="@color/black"
+                android:background="@mipmap/save_background"
+                android:contentDescription=" "
+                android:src="@android:drawable/ic_menu_save"
+                 />
+
+        </LinearLayout>
+
+        <!-- Drawing View (custom view) -->
+        <com.example.sketch.DrawingView
+            android:id="@+id/drawing_view"
+            android:layout_width="match_parent"
+            android:layout_height="300dp"
+            android:layout_weight="1"
+            android:layout_columnWeight="1"
+            android:background="#FFFFFF" />
+
+        <!-- Control buttons, e.g., clear, save -->
+
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/clear_button"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:background="@mipmap/claer_backgorund"
+                android:text="Clear Canvas"/>
+
+            <SeekBar
+                android:id="@+id/shapesizer"
+                android:layout_width="122dp"
+                android:layout_height="match_parent"
+                android:thumb="@android:drawable/star_on"
+                 />
+
+            <ImageButton
+                android:id="@+id/eraserButton"
+                android:layout_width="65dp"
+                android:layout_height="match_parent"
+                app:srcCompat="@mipmap/eraser" />
+
+            <ImageButton
+                android:id="@+id/mirrorButton"
+                android:layout_width="65dp"
+                android:layout_height="match_parent"
+                app:srcCompat="@mipmap/mirror_button" />
+
+
+        </LinearLayout>
+    </LinearLayout>
+
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
