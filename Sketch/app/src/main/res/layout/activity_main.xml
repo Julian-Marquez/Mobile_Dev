@@ -27,7 +27,8 @@
             android:id="@+id/searchBar"
             android:layout_width="335dp"
             android:layout_height="match_parent"
-            android:layout_weight="1">
+            android:layout_weight="1"
+            android:background="#52A0D5">
 
 
         </SearchView>
@@ -38,7 +39,7 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:adjustViewBounds="true"
-            android:background="@drawable/circle_buttons"
+            android:background="#52A0D5"
             android:clipToOutline="true"
             android:cropToPadding="true"
             android:foreground="@drawable/circle_buttons"
@@ -76,20 +77,20 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
-        app:layout_constraintEnd_toStartOf="@id/canvasGameButton"
+        app:backgroundTint="#58595B"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:srcCompat="@android:drawable/ic_menu_edit"
-        tools:layout_editor_absoluteX="283dp" />
+        app:layout_constraintEnd_toStartOf="@id/canvasGameButton"
+        app:srcCompat="@android:drawable/ic_menu_edit" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/ViewLocations"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
-        app:layout_constraintEnd_toStartOf="@id/newcanvas"
+        app:backgroundTint="#58595B"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:srcCompat="@drawable/marker_default"
-        tools:layout_editor_absoluteX="283dp" />
+        app:layout_constraintEnd_toStartOf="@id/newcanvas"
+        app:srcCompat="@drawable/marker_default" />
 
     <ImageView
         android:id="@+id/drawing_view_text"

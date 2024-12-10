@@ -27,7 +27,8 @@
             android:id="@+id/searchBar"
             android:layout_width="335dp"
             android:layout_height="match_parent"
-            android:layout_weight="1">
+            android:layout_weight="1"
+            android:background="#53A0D4">
 
 
         </SearchView>
@@ -38,7 +39,7 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:adjustViewBounds="true"
-            android:background="@drawable/circle_buttons"
+            android:background="#53A0D4"
             android:clipToOutline="true"
             android:cropToPadding="true"
             android:foreground="@drawable/circle_buttons"
