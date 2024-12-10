@@ -9,7 +9,7 @@ The project is organized into the following key folders:
 
 Requirements:
 
- Android Studio (Latest Version): Your development environment.
+ Android Studio (Latest Version, current latest is Ladybug): Your development environment.
  Java Development Kit (JDK 11 or higher): Needed to compile Java code.
  Git version control system: For managing code versions.
  Required libraries: Listed in the build.gradle file and managed by Gradle.
