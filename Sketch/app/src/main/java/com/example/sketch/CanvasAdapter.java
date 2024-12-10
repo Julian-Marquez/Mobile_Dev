@@ -289,7 +289,7 @@ public class CanvasAdapter extends RecyclerView.Adapter<CanvasAdapter.CanvasView
             ImageButton redoButton = mainpage.findViewById(R.id.redobutton);
             ImageButton undoButton = mainpage.findViewById(R.id.undobutton);
             SeekBar shapesizer = mainpage.findViewById(R.id.shapesizer);
-            Button clearButton = mainpage.findViewById(R.id.clear_button);
+            ImageButton clearButton = mainpage.findViewById(R.id.clear_button);
             Button colorButton = mainpage.findViewById(R.id.color_button);
             ImageButton saveButton =  mainpage.findViewById(R.id.save_button);
 

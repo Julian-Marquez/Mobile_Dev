@@ -117,7 +117,7 @@ public class CanvasCreationActivity extends AppCompatActivity {
             ImageButton undoButton = findViewById(R.id.undobutton);
             ImageButton redoButton = findViewById(R.id.redobutton);
             SeekBar shapesizer = findViewById(R.id.shapesizer);
-            Button clearButton = findViewById(R.id.clear_button);
+            ImageButton clearButton = findViewById(R.id.clear_button);
             Button colorButton = findViewById(R.id.color_button);
             ImageButton saveButton = findViewById(R.id.save_button);
 
